@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$Title,
     [string]$Priority = "P2",
     [int]$ProjectId = 1,

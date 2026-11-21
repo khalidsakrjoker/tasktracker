@@ -148,17 +148,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Open Source Signature Footer */}
-      <div className="p-3.5 border-t border-theme-border bg-theme-elevated/70">
+      <div className="p-3 border-t border-theme-border bg-theme-elevated/70">
         <a
-          href="https://github.com/khalidsakrjoker"
+          href="https://github.com/khalidsakrjoker/tasktracker"
           target="_blank"
           rel="noopener noreferrer"
           className="group block p-2 rounded-xl border border-transparent hover:border-theme-border hover:bg-theme-card transition-all"
         >
           <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-theme-text font-bold group-hover:text-blue-600 transition-colors">
+            <div className="flex items-center gap-1.5 text-theme-text font-bold group-hover:text-blue-600 transition-colors">
               <i className="fa-brands fa-github text-sm"></i>
-              <span className="text-[11px]">@khalidsakrjoker</span>
+              <span className="text-[11px] font-mono tracking-tight">khalidsakrjoker/tasktracker</span>
             </div>
             <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-theme-textMuted group-hover:text-blue-600 transition-colors"></i>
           </div>
