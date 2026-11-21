@@ -8,6 +8,34 @@ import { prisma } from "../../shared/db.js";
 export class TelegramService {
   private static isPolling = false;
   private static lastUpdateId = 0;
+  private static authorizedUserIds = new Set<string | number>();
+  private static authFileLoaded = false;
+
+  private static loadAuthorizedUsers(): void {
+    if (this.authFileLoaded) return;
+    this.authFileLoaded = true;
+    try {
+      const authPath = path.resolve(process.cwd(), "prisma", "authorized_telegram_users.json");
+      if (fs.existsSync(authPath)) {
+        const raw = fs.readFileSync(authPath, "utf-8");
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          list.forEach((id) => this.authorizedUserIds.add(id));
+        }
+      }
+    } catch (err) {
+      logger.error({ err }, "Failed to load authorized telegram users");
+    }
+  }
+
+  private static saveAuthorizedUsers(): void {
+    try {
+      const authPath = path.resolve(process.cwd(), "prisma", "authorized_telegram_users.json");
+      fs.writeFileSync(authPath, JSON.stringify(Array.from(this.authorizedUserIds), null, 2));
+    } catch (err) {
+      logger.error({ err }, "Failed to save authorized telegram users");
+    }
+  }
 
   static async sendMessage(text: string, chatId?: string | number): Promise<boolean> {
     const targetChatId = chatId || config.TELEGRAM_CHAT_ID;
@@ -114,7 +142,7 @@ export class TelegramService {
   static startPolling(): void {
     if (this.isPolling || !config.TELEGRAM_BOT_TOKEN) return;
     this.isPolling = true;
-    logger.info("Telegram Bot command polling started with long-polling");
+    logger.info("Telegram Bot command polling started with long-polling and strict security whitelist");
 
     const poll = async () => {
       try {
@@ -137,9 +165,10 @@ export class TelegramService {
             this.lastUpdateId = update.update_id;
             const msgText = update.message?.text?.trim();
             const chatId = update.message?.chat?.id;
+            const fromUser = update.message?.from;
             if (!msgText || !chatId) continue;
 
-            await this.handleIncomingCommand(msgText, chatId);
+            await this.handleIncomingCommand(msgText, chatId, fromUser);
           }
         }
       } catch (err) {
@@ -152,13 +181,73 @@ export class TelegramService {
     poll();
   }
 
-  private static async handleIncomingCommand(text: string, chatId: number | string): Promise<void> {
+  private static async handleIncomingCommand(
+    text: string,
+    chatId: number | string,
+    fromUser?: { id: number; first_name?: string; username?: string }
+  ): Promise<void> {
+    this.loadAuthorizedUsers();
+
+    const isGroup = String(chatId) === String(config.TELEGRAM_CHAT_ID);
+    const fromId = fromUser?.id;
+    const isAuthorizedUser = fromId ? this.authorizedUserIds.has(fromId) || this.authorizedUserIds.has(String(fromId)) : false;
+
     const rawCmd = text.split(/\s+/)[0].split("@")[0].toLowerCase();
 
+    // 1. PIN-Based Auth in Private Chat
+    if (rawCmd === "/auth") {
+      const pin = text.split(/\s+/)[1]?.trim();
+      if (pin === config.APP_PIN) {
+        if (fromId) {
+          this.authorizedUserIds.add(fromId);
+          this.saveAuthorizedUsers();
+        }
+        await this.sendMessage(
+          `✅ *تم توثيق واعتماد حسابك كمسؤول للنظام!*\n\nأصبح بإمكانك الآن إرسال جميع الأوامر من هذا الشات بأمان تام. اكتب \`/help\` لمشاهدة الأوامر.`,
+          chatId
+        );
+        await this.sendMessage(
+          `🔔 *إشعار أمني:* تم توثيق حساب تيليجرام كمسؤول في الشات الخاص:\n👤 الحساب: @${fromUser?.username || "بدون يوزر"}\n🆔 الآيدي: \`${fromId}\``,
+          config.TELEGRAM_CHAT_ID
+        );
+        return;
+      } else {
+        await this.sendMessage(
+          `⛔ *رمز الـ PIN غير صحيح.*\nيرجى كتابة: \`/auth <PIN>\``,
+          chatId
+        );
+        await this.sendMessage(
+          `🚨 *تحذير أمني:* حاول حساب تيليجرام إدخال PIN خاطئ لتفعيل البوت في الخاص وتم صده:\n👤 الحساب: @${fromUser?.username || "بدون يوزر"}\n🆔 الآيدي: \`${fromId}\``,
+          config.TELEGRAM_CHAT_ID
+        );
+        return;
+      }
+    }
+
+    // 2. Ironclad Security Barrier: Must be either the private Task_BU group OR an authenticated admin user
+    if (!isGroup && !isAuthorizedUser) {
+      logger.warn({ fromId, fromUser, text }, "Blocked unauthorized Telegram access attempt");
+      await this.sendMessage(
+        `⛔ *وصول غير مصرح به:*\nهذا البوت شخصي وخاص بنظام TaskTracker Studio ومحمي أمنياً.\nلست مصرحاً لك بتنفيذ أي أوامر.`,
+        chatId
+      );
+      // Alert the owner in the group!
+      await this.sendMessage(
+        `🚨 *تنبيه أمني - محاولة وصول غريبة للبوت:*\n` +
+        `حاول حساب غير مصرح به التحدث مع البوت في الخاص وتم صده!\n` +
+        `👤 الحساب: @${fromUser?.username || "بدون يوزر"}\n` +
+        `🆔 الآيدي: \`${fromId}\`\n` +
+        `💬 الرسالة التي كتبها: \`${text}\``,
+        config.TELEGRAM_CHAT_ID
+      );
+      return;
+    }
+
+    // 3. Authorized command handlers
     if (rawCmd === "/start" || rawCmd === "/help") {
       const welcomeMsg = `⚡ *مرحباً بك في بوت TaskTracker* 🤖\n\n` +
         `أنا المساعد الذكي لإدارة مهامك ومشروعاتك البرمجية.\n` +
-        `يمكنك التحكم بالنظام واستلام التنبيهات من هذا الشات المباشر أو من الجروب المشترك!\n\n` +
+        `تم تأمين هذا الشات بنظام Whitelist حصري لحسابك.\n\n` +
         `📋 *الأوامر المتاحة:*\n` +
         `▫️ \`/status\` - تقرير فوري بحالة النظام والمشاريع والمهام\n` +
         `▫️ \`/tasks\` - عرض أهم المهام المعلقة والطارئة (P1)\n` +
