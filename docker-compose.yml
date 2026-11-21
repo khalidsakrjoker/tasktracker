@@ -1,0 +1,23 @@
+services:
+  tasktracker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tasktracker_app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3005:3005"
+    env_file:
+      - .env
+    volumes:
+      - tasktracker_data:/app/prisma
+    networks:
+      - tasktracker_net
+
+volumes:
+  tasktracker_data:
+    driver: local
+
+networks:
+  tasktracker_net:
+    driver: bridge
