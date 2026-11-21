@@ -16,6 +16,7 @@ export interface Translations {
   lockScreen: string;
   openSourceSignature: string;
   licenseText: string;
+  vibeCodedBadge: string;
   installAppBtn: string;
   appInstalled: string;
   installModalTitle: string;
@@ -170,6 +171,7 @@ const translations: Record<Language, Translations> = {
     lockScreen: "Lock Screen",
     openSourceSignature: "Open Source Repository",
     licenseText: "MIT License • v1.0.0",
+    vibeCodedBadge: "Vibe Coded",
     installAppBtn: "Install App",
     appInstalled: "Installed",
     installModalTitle: "Install TaskTracker Studio",
@@ -312,6 +314,7 @@ const translations: Record<Language, Translations> = {
     lockScreen: "قفل الشاشة",
     openSourceSignature: "المستودع مفتوح المصدر",
     licenseText: "ترخيص MIT • الإصدار 1.0.0",
+    vibeCodedBadge: "فايب كودينج",
     installAppBtn: "تثبيت التطبيق",
     appInstalled: "تم التثبيت",
     installModalTitle: "تثبيت تطبيق TaskTracker",

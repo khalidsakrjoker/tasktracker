@@ -1,6 +1,10 @@
 # TaskTracker Studio
 
-نظام إدارة المشروعات البرمجية والمهام اليومية المطور للمهندسين المستقلين لإدارة أكثر من مشروع وعميل في وقت واحد بدون تشتت أو نسيان.
+[![Vibe Coding](https://img.shields.io/badge/Vibe_Coding-100%25-8B5CF6?style=flat-square&logo=sparkles&logoColor=white)](https://github.com/khalidsakrjoker/tasktracker)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/badge/Release-v1.0.0-emerald.svg)](https://github.com/khalidsakrjoker/tasktracker)
+
+نظام إدارة المشروعات البرمجية والمهام اليومية المطور للمهندسين المستقلين لإدارة أكثر من مشروع وعميل في وقت واحد بدون تشتت أو نسيان. (تم تطويره بالكامل بنمط الـ Vibe Coding بتوجيه وإشراف المطور).
 
 ## المكونات الرئيسية
 1. **مصفوفة التركيز اليومي (Daily Focus Matrix):**

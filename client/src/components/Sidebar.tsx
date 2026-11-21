@@ -160,9 +160,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <i className="fa-brands fa-github text-sm"></i>
               <span className="text-[11px] font-mono tracking-tight">khalidsakrjoker/tasktracker</span>
             </div>
-            <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-theme-textMuted group-hover:text-blue-600 transition-colors"></i>
+            <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-gradient-to-r from-purple-500/15 to-pink-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 flex items-center gap-1 group-hover:scale-105 transition-transform shadow-xs">
+              <i className="fa-solid fa-wand-magic-sparkles text-[8px] text-pink-500"></i>
+              <span>{t("vibeCodedBadge")}</span>
+            </span>
           </div>
-          <div className="text-[10px] text-theme-textMuted mt-1 flex items-center justify-between">
+          <div className="text-[10px] text-theme-textMuted mt-1.5 flex items-center justify-between">
             <span>{t("openSourceSignature")}</span>
             <span className="font-mono">{t("licenseText")}</span>
           </div>
