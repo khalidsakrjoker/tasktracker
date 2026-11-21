@@ -55,9 +55,12 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
     return matchName || matchPhone || matchCompany;
   });
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newClientName.trim()) return;
+  const handleCreate = async (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!newClientName.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -72,6 +75,8 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
         setNewClientPhone("");
         setIsOpen(false);
       }
+    } catch (err) {
+      console.error("Create client error:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -201,7 +206,11 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
               <div className="p-2 border-t border-theme-border bg-theme-elevated">
                 <button
                   type="button"
-                  onClick={() => startInlineAdd(searchQuery)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startInlineAdd(searchQuery);
+                  }}
                   className="w-full py-2 px-3 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 border border-blue-500/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <i className="fa-solid fa-user-plus text-xs"></i>
@@ -214,8 +223,11 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
               </div>
             </>
           ) : (
-            /* Inline Quick Create Form */
-            <form onSubmit={handleCreate} className="p-3 space-y-2.5 bg-theme-card">
+            /* Inline Quick Create Container (NOT a <form> to prevent illegal form nesting in QuickTaskDrawer) */
+            <div
+              className="p-3 space-y-2.5 bg-theme-card"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between pb-1 border-b border-theme-border">
                 <span className="font-bold text-xs text-theme-text flex items-center gap-1.5">
                   <i className="fa-solid fa-user-plus text-blue-500"></i>
@@ -223,8 +235,12 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsCreatingInline(false)}
-                  className="text-theme-textMuted hover:text-theme-text"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsCreatingInline(false);
+                  }}
+                  className="text-theme-textMuted hover:text-theme-text p-1"
                 >
                   <i className="fa-solid fa-xmark"></i>
                 </button>
@@ -240,6 +256,13 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
                   autoFocus
                   value={newClientName}
                   onChange={(e) => setNewClientName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleCreate(e);
+                    }
+                  }}
                   placeholder={t("clientNamePlaceholder")}
                   className="w-full bg-theme-input border border-theme-border rounded-lg px-2.5 py-1.5 text-xs text-theme-text focus:outline-none focus:border-blue-500"
                 />
@@ -253,6 +276,13 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
                   type="text"
                   value={newClientPhone}
                   onChange={(e) => setNewClientPhone(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleCreate(e);
+                    }
+                  }}
                   placeholder="010xxxxxxxx"
                   dir="ltr"
                   className="w-full bg-theme-input border border-theme-border rounded-lg px-2.5 py-1.5 text-xs text-theme-text focus:outline-none focus:border-blue-500"
@@ -262,20 +292,25 @@ export const SearchableClientSelect: React.FC<SearchableClientSelectProps> = ({
               <div className="flex items-center justify-end gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setIsCreatingInline(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsCreatingInline(false);
+                  }}
                   className="px-3 py-1 rounded-lg bg-theme-hover text-theme-textSecondary text-xs"
                 >
                   {t("cancelBtn")}
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={(e) => handleCreate(e)}
                   disabled={isSubmitting || !newClientName.trim()}
-                  className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-50"
+                  className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-50 transition-colors shadow-xs"
                 >
                   {isSubmitting ? "..." : t("saveClientBtn")}
                 </button>
               </div>
-            </form>
+            </div>
           )}
         </div>
       )}

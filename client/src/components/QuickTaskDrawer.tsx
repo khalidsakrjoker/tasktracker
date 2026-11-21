@@ -101,7 +101,20 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            onKeyDown={(e) => {
+              // Prevent accidental premature submission on Enter key while user is still typing fields
+              if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
+                if (e.ctrlKey || e.metaKey) {
+                  handleSubmit(e);
+                } else {
+                  e.preventDefault();
+                }
+              }
+            }}
+            className="space-y-4"
+          >
             {/* Task Title */}
             <div>
               <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
