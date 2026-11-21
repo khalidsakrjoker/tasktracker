@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { config } from "../../src/config/index.js";
 
 describe("API Integration Endpoints Full Cycle", () => {
   let authToken: string;
@@ -8,7 +9,7 @@ describe("API Integration Endpoints Full Cycle", () => {
   beforeAll(async () => {
     const loginRes = await request(app)
       .post("/api/auth/login")
-      .send({ pin: "948271" });
+      .send({ pin: config.APP_PIN });
 
     authToken = loginRes.body.token;
   });
@@ -22,7 +23,7 @@ describe("API Integration Endpoints Full Cycle", () => {
   it("POST /api/auth/login should issue token with correct PIN", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ pin: "948271" });
+      .send({ pin: config.APP_PIN });
 
     expect(res.status).toBe(200);
     expect(res.body.token).toBeDefined();

@@ -7,7 +7,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().default(3005),
   DATABASE_URL: z.string().default("file:./workmanager.db"),
-  APP_PIN: z.string().min(6).max(6).default("948271"),
+  APP_PIN: z.string().min(6).max(6).default("123456"),
   SESSION_SECRET: z.string().min(16).default("tasktracker_default_session_secret_2026"),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_CHAT_ID: z.string().optional(),

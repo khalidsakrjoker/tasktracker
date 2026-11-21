@@ -1,12 +1,12 @@
-param(
+﻿param(
     [string]$Title,
     [string]$Priority = "P2",
     [int]$ProjectId = 1,
     [string]$Details = ""
 )
 
-$ServerUrl = "https://tasktracker.bot.nu"
-$Pin = "948271"
+$ServerUrl = if ($env:TASKTRACKER_URL) { $env:TASKTRACKER_URL } else { "https://tasktracker.bot.nu" }
+$Pin = if ($env:TASKTRACKER_PIN) { $env:TASKTRACKER_PIN } else { "123456" }
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
