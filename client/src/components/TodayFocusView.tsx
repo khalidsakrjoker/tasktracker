@@ -5,12 +5,14 @@ import { useI18n } from "../i18n";
 interface TodayFocusViewProps {
   focusData: TodayFocusData;
   onUpdateTaskStatus: (taskId: number, status: string) => void;
+  onDeleteTask: (taskId: number) => void;
   onOpenQuickAdd: (priority?: "P1" | "P2" | "P3") => void;
 }
 
 export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
   focusData,
   onUpdateTaskStatus,
+  onDeleteTask,
   onOpenQuickAdd
 }) => {
   const { t, lang } = useI18n();
@@ -108,6 +110,18 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
             >
               <i className="fa-solid fa-check"></i>
               <span>{t("doneBtn")}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (window.confirm(lang === "ar" ? "هل تريد بالتأكيد حذف هذه المهمة نهائياً؟" : "Are you sure you want to delete this task?")) {
+                  onDeleteTask(task.id);
+                }
+              }}
+              title={t("deleteTask")}
+              className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-rose-500/20 text-theme-textMuted hover:text-rose-500 border border-theme-border hover:border-rose-500/30 transition-all flex items-center justify-center"
+            >
+              <i className="fa-regular fa-trash-can"></i>
             </button>
           </div>
         </div>

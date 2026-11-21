@@ -335,6 +335,7 @@ const MainAppContent: React.FC = () => {
                 <TodayFocusView
                   focusData={focusData}
                   onUpdateTaskStatus={handleUpdateTaskStatus}
+                  onDeleteTask={handleDeleteTask}
                   onOpenQuickAdd={(prio) => {
                     if (prio) setQuickAddPriority(prio);
                     setIsQuickAddOpen(true);
