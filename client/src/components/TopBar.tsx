@@ -12,6 +12,8 @@ interface TopBarProps {
   onLogout: () => void;
   onTriggerBackup: () => void;
   isBackingUp: boolean;
+  onOpenInstallModal: () => void;
+  isAppInstalled: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -23,7 +25,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenQuickAdd,
   onLogout,
   onTriggerBackup,
-  isBackingUp
+  isBackingUp,
+  onOpenInstallModal,
+  isAppInstalled
 }) => {
   const { lang, setLang, t } = useI18n();
   const { theme, toggleTheme } = useTheme();
@@ -75,6 +79,18 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Action Controls & Settings */}
       <div className="flex items-center gap-2">
+        {/* Install App Button */}
+        {!isAppInstalled && (
+          <button
+            onClick={onOpenInstallModal}
+            title={t("installAppBtn")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-600 text-xs font-bold transition-all shadow-sm animate-pulse"
+          >
+            <i className="fa-solid fa-cloud-arrow-down text-xs"></i>
+            <span className="hidden sm:inline">{t("installAppBtn")}</span>
+          </button>
+        )}
+
         {/* Language Switcher (EN / AR) */}
         <button
           onClick={() => setLang(lang === "en" ? "ar" : "en")}

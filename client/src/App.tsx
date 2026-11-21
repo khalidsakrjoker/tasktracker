@@ -9,6 +9,7 @@ import { ClientsCRMView } from "./components/ClientsCRMView";
 import { QuickTaskDrawer } from "./components/QuickTaskDrawer";
 import { PinLockModal } from "./components/PinLockModal";
 import { NewProjectModal } from "./components/NewProjectModal";
+import { InstallAppModal } from "./components/InstallAppModal";
 import { Project, Client, Task, TodayFocusData } from "./types";
 
 const MainAppContent: React.FC = () => {
@@ -35,6 +36,11 @@ const MainAppContent: React.FC = () => {
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
+  // PWA Installation & Shortcuts State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+
   // Check initial authentication
   useEffect(() => {
     fetch("/api/auth/me")
@@ -46,6 +52,54 @@ const MainAppContent: React.FC = () => {
         setIsAuthenticated(false);
       });
   }, []);
+
+  // PWA lifecycle & URL query parameters listener
+  useEffect(() => {
+    // Detect if running in standalone PWA window (Desktop or Mobile)
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+    if (isStandalone) {
+      setIsAppInstalled(true);
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    // Support URL Shortcuts (e.g. /?quick=1 from Taskbar or Desktop Shortcut)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("quick") === "1" || params.has("quick")) {
+      setIsQuickAddOpen(true);
+    }
+    const viewParam = params.get("view");
+    if (viewParam === "clients" || viewParam === "focus" || viewParam === "project") {
+      setActiveView(viewParam);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const triggerInstallPrompt = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setIsAppInstalled(true);
+      }
+      setDeferredPrompt(null);
+    }
+  };
 
   // Fetch all core data
   const loadData = async () => {
@@ -210,6 +264,8 @@ const MainAppContent: React.FC = () => {
             onLogout={handleLogout}
             onTriggerBackup={handleTriggerBackup}
             isBackingUp={isBackingUp}
+            onOpenInstallModal={() => setIsInstallModalOpen(true)}
+            isAppInstalled={isAppInstalled}
           />
 
           <div className="flex-1 flex overflow-hidden">
@@ -222,6 +278,8 @@ const MainAppContent: React.FC = () => {
               }}
               projects={projects}
               onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+              onOpenInstallModal={() => setIsInstallModalOpen(true)}
+              isAppInstalled={isAppInstalled}
             />
 
             <main className="flex-1 overflow-y-auto">
@@ -285,6 +343,13 @@ const MainAppContent: React.FC = () => {
             isOpen={isNewProjectModalOpen}
             onClose={() => setIsNewProjectModalOpen(false)}
             onCreateProject={handleCreateProject}
+          />
+
+          <InstallAppModal
+            isOpen={isInstallModalOpen}
+            onClose={() => setIsInstallModalOpen(false)}
+            onInstallPrompt={triggerInstallPrompt}
+            hasNativePrompt={!!deferredPrompt}
           />
         </>
       )}

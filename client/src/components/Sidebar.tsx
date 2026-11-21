@@ -8,6 +8,8 @@ interface SidebarProps {
   onSelectView: (view: "focus" | "project" | "clients", projectId?: number) => void;
   projects: Project[];
   onOpenNewProject: () => void;
+  onOpenInstallModal?: () => void;
+  isAppInstalled?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -15,7 +17,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedProjectId,
   onSelectView,
   projects,
-  onOpenNewProject
+  onOpenNewProject,
+  onOpenInstallModal,
+  isAppInstalled
 }) => {
   const { t } = useI18n();
 
@@ -125,6 +129,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </div>
         </div>
+
+        {/* Install App Quick Action (if not installed) */}
+        {!isAppInstalled && onOpenInstallModal && (
+          <div className="pt-2">
+            <button
+              onClick={onOpenInstallModal}
+              className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600/10 to-indigo-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 border border-blue-500/30 text-blue-600 text-xs font-bold flex items-center justify-between transition-all group shadow-sm"
+            >
+              <div className="flex items-center gap-2">
+                <i className="fa-solid fa-cloud-arrow-down text-sm text-blue-600 group-hover:scale-110 transition-transform"></i>
+                <span>{t("installAppBtn")}</span>
+              </div>
+              <i className="fa-solid fa-arrow-right text-[10px] rtl:rotate-180"></i>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Open Source Signature Footer */}

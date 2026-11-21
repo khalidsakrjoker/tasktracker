@@ -16,6 +16,14 @@ export interface Translations {
   lockScreen: string;
   openSourceSignature: string;
   licenseText: string;
+  installAppBtn: string;
+  appInstalled: string;
+  installModalTitle: string;
+  installModalDescDesktop: string;
+  installModalDescMobile: string;
+  installModalAction: string;
+  closeModal: string;
+  quickCaptureShortcutNote: string;
 
   // Search
   searchPlaceholder: string;
@@ -162,6 +170,14 @@ const translations: Record<Language, Translations> = {
     lockScreen: "Lock Screen",
     openSourceSignature: "Open Source by @khalidsakrjoker",
     licenseText: "MIT License • v1.0.0",
+    installAppBtn: "Install App",
+    appInstalled: "Installed",
+    installModalTitle: "Install TaskTracker Studio",
+    installModalDescDesktop: "Install on your computer to run in a dedicated standalone window with Desktop and Taskbar quick shortcuts.",
+    installModalDescMobile: "Tap the browser share or menu icon, then select 'Add to Home Screen' to use it as a native app on your phone.",
+    installModalAction: "Install Now",
+    closeModal: "Close",
+    quickCaptureShortcutNote: "Press Ctrl + N anywhere to quick capture a task",
 
     searchPlaceholder: "Quick search across projects, clients & tasks (Ctrl + K)...",
 
@@ -296,6 +312,14 @@ const translations: Record<Language, Translations> = {
     lockScreen: "قفل الشاشة",
     openSourceSignature: "مشروع مفتوح المصدر • تطوير @khalidsakrjoker",
     licenseText: "ترخيص MIT • الإصدار 1.0.0",
+    installAppBtn: "تثبيت التطبيق",
+    appInstalled: "تم التثبيت",
+    installModalTitle: "تثبيت تطبيق TaskTracker",
+    installModalDescDesktop: "ثبّت التطبيق على جهاز الكمبيوتر لتشغيله في نافذة مستقلة مع أيقونة على سطح المكتب وشريط المهام والتشغيل السريع.",
+    installModalDescMobile: "اضغط على زر المشاركة أو الثلاث نقاط في متصفحك ثم اختر 'إضافة إلى الشاشة الرئيسية' لتثبيته كتطبيق مباشر على هاتفك.",
+    installModalAction: "تثبيت الآن",
+    closeModal: "إغلاق",
+    quickCaptureShortcutNote: "اضغط Ctrl + N في أي مكان لتسجيل مهمة خاطفة في ثوانٍ",
 
     searchPlaceholder: "بحث سريع في المشروعات والعملاء والمهام (Ctrl + K)...",
 
