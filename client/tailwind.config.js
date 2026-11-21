@@ -5,21 +5,34 @@ export default {
   theme: {
     extend: {
       colors: {
+        theme: {
+          page: "var(--bg-page)",
+          card: "var(--bg-card)",
+          elevated: "var(--bg-elevated)",
+          subtle: "var(--bg-subtle)",
+          input: "var(--bg-input)",
+          hover: "var(--bg-hover)",
+          border: "var(--border-main)",
+          borderSubtle: "var(--border-subtle)",
+          text: "var(--text-main)",
+          textSecondary: "var(--text-secondary)",
+          textMuted: "var(--text-muted)"
+        },
         obsidian: {
-          950: "#070A0F",
-          900: "#0B0F17",
-          850: "#101726",
-          800: "#131B2A",
-          750: "#182236",
-          700: "#1E293B",
-          600: "#334155"
+          950: "#0B0F19",
+          900: "#111827",
+          850: "#182234",
+          800: "#1E293B",
+          750: "#243247",
+          700: "#334155",
+          600: "#475569"
         },
         cyber: {
-          blue: "#38BDF8",
+          blue: "#2563EB",
           emerald: "#10B981",
-          purple: "#A855F7",
+          purple: "#8B5CF6",
           amber: "#F59E0B",
-          rose: "#F43F5E"
+          rose: "#EF4444"
         }
       },
       fontFamily: {

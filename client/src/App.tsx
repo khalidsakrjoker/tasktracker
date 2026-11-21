@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { I18nProvider, useI18n } from "./i18n";
+import { ThemeProvider } from "./theme";
 import { TopBar } from "./components/TopBar";
 import { Sidebar } from "./components/Sidebar";
 import { TodayFocusView } from "./components/TodayFocusView";
@@ -9,7 +11,8 @@ import { PinLockModal } from "./components/PinLockModal";
 import { NewProjectModal } from "./components/NewProjectModal";
 import { Project, Client, Task, TodayFocusData } from "./types";
 
-export const App: React.FC = () => {
+const MainAppContent: React.FC = () => {
+  const { lang } = useI18n();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [activeView, setActiveView] = useState<"focus" | "project" | "clients">("focus");
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
@@ -56,7 +59,13 @@ export const App: React.FC = () => {
         fetch("/api/tasks")
       ]);
 
-      if (projRes.ok) setProjects(await projRes.json());
+      if (projRes.ok) {
+        const pList = await projRes.json();
+        setProjects(pList);
+        if (!selectedProjectId && pList.length > 0) {
+          setSelectedProjectId(pList[0].id);
+        }
+      }
       if (clientsRes.ok) setClients(await clientsRes.json());
       if (focusRes.ok) setFocusData(await focusRes.json());
       if (tasksRes.ok) setTasks(await tasksRes.json());
@@ -74,11 +83,11 @@ export const App: React.FC = () => {
   // Global hotkeys listener (Ctrl+N for quick add, Ctrl+K for search)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
         if (searchInput) searchInput.focus();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
         e.preventDefault();
         setIsQuickAddOpen(true);
       }
@@ -123,27 +132,38 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleCreateClient = async (clientData: any) => {
+  const handleCreateClient = async (clientData: any): Promise<Client | null> => {
     try {
-      await fetch("/api/clients", {
+      const res = await fetch("/api/clients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(clientData)
       });
-      loadData();
+      if (res.ok) {
+        const newClient = await res.json();
+        setClients((prev) => [...prev, newClient]);
+        loadData();
+        return newClient;
+      }
+      return null;
     } catch (err) {
       console.error("Create client error:", err);
+      return null;
     }
   };
 
   const handleCreateProject = async (projectData: any) => {
     try {
-      await fetch("/api/projects", {
+      const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(projectData)
       });
-      loadData();
+      if (res.ok) {
+        const created = await res.json();
+        setSelectedProjectId(created.id);
+        loadData();
+      }
     } catch (err) {
       console.error("Create project error:", err);
     }
@@ -152,7 +172,10 @@ export const App: React.FC = () => {
   const handleTriggerBackup = async () => {
     setIsBackingUp(true);
     try {
-      alert("جاري إنشاء النسخة الاحتياطية وإرسالها إلى جروب تليجرام...");
+      const msg = lang === "ar"
+        ? "جاري إنشاء النسخة الاحتياطية وإرسالها إلى جروب تليجرام..."
+        : "Creating database backup and sending to Telegram group...";
+      alert(msg);
     } finally {
       setTimeout(() => setIsBackingUp(false), 2000);
     }
@@ -166,7 +189,7 @@ export const App: React.FC = () => {
   const selectedProject = projects.find((p) => p.id === selectedProjectId) || projects[0];
 
   return (
-    <div className="min-h-screen bg-obsidian-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-theme-page text-theme-text flex flex-col transition-colors">
       <PinLockModal
         isOpen={isAuthenticated === false}
         onSuccess={() => setIsAuthenticated(true)}
@@ -255,6 +278,7 @@ export const App: React.FC = () => {
             initialProjectId={quickAddProjectId}
             initialClientId={quickAddClientId}
             onSaveTask={handleSaveTask}
+            onCreateClient={handleCreateClient}
           />
 
           <NewProjectModal
@@ -265,5 +289,15 @@ export const App: React.FC = () => {
         </>
       )}
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <I18nProvider>
+        <MainAppContent />
+      </I18nProvider>
+    </ThemeProvider>
   );
 };

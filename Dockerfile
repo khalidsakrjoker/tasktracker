@@ -1,42 +1,18 @@
-# Multi-stage Dockerfile for TaskTracker
-FROM node:22-alpine AS builder
-
-WORKDIR /app
-
-# Install dependencies
-COPY package*.json ./
-COPY prisma ./prisma/
-RUN npm ci
-
-# Copy server code
-COPY tsconfig.json ./
-COPY src ./src/
-RUN npx prisma generate
-RUN npx tsc
-
-# Build Client
-WORKDIR /app/client
-COPY client/package*.json ./
-RUN npm ci
-COPY client/ ./
-RUN npm run build
-
-# Runtime Stage
-FROM node:22-alpine AS runner
+FROM node:20-slim
 
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install production dependencies only
-COPY package*.json ./
+RUN apt-get update && apt-get install -y openssl wget && rm -rf /var/lib/apt/lists/*
+
+COPY package.json ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev && npx prisma generate
 
-# Copy built artifacts from builder
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/client/dist ./client/dist
+RUN npm install --omit=dev && npx prisma generate
 
-# Set permissions for non-root node user
+COPY dist ./dist
+COPY client/dist ./client/dist
+
 RUN chown -R node:node /app
 
 USER node

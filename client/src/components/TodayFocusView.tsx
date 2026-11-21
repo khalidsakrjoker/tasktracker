@@ -1,5 +1,6 @@
 import React from "react";
 import { Task, TodayFocusData } from "../types";
+import { useI18n } from "../i18n";
 
 interface TodayFocusViewProps {
   focusData: TodayFocusData;
@@ -12,11 +13,22 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
   onUpdateTaskStatus,
   onOpenQuickAdd
 }) => {
+  const { t, lang } = useI18n();
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "bug": return `🐞 ${t("typeBug")}`;
+      case "feature": return `✨ ${t("typeFeature")}`;
+      case "tweak": return `⚡ ${t("typeTweak")}`;
+      default: return `📞 ${t("typeSupport")}`;
+    }
+  };
+
   const renderTaskCard = (task: Task) => {
     return (
       <div
         key={task.id}
-        className={`p-4 rounded-xl bg-obsidian-850 border border-obsidian-700 hover:border-obsidian-600 transition-all shadow-md group ${
+        className={`p-4 rounded-xl bg-theme-card border border-theme-border hover:border-blue-500/40 transition-all shadow-sm group ${
           task.priority === "P1"
             ? "glow-card-p1"
             : task.priority === "P2"
@@ -28,41 +40,41 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
             <span
-              className="text-[11px] font-bold px-2 py-0.5 rounded-md text-white"
+              className="text-[11px] font-bold px-2 py-0.5 rounded-md text-white shadow-sm"
               style={{ backgroundColor: task.project?.color || "#3B82F6" }}
             >
               {task.project?.name}
             </span>
-            <span className="text-[10px] text-slate-300 bg-obsidian-800 px-1.5 py-0.5 rounded">
-              {task.type === "bug" ? "🐞 خطأ برمجي" : task.type === "feature" ? "✨ ميزة جديدة" : task.type === "tweak" ? "⚡ تحسين" : "📞 دعم"}
+            <span className="text-[10px] text-theme-textSecondary bg-theme-elevated px-1.5 py-0.5 rounded border border-theme-border">
+              {getTypeLabel(task.type)}
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-300 font-medium">
-            <i className="fa-regular fa-clock ml-1"></i>
-            <span>{task.estimatedMinutes || 30} د</span>
+          <div className="text-[11px] text-theme-textMuted font-medium flex items-center gap-1">
+            <i className="fa-regular fa-clock"></i>
+            <span>{task.estimatedMinutes || 30}{t("minAbbr")}</span>
           </div>
         </div>
 
         {/* Task Title */}
-        <h3 className="text-sm font-semibold text-slate-100 leading-snug mb-2 group-hover:text-cyber-blue transition-colors">
+        <h3 className="text-sm font-semibold text-theme-text leading-snug mb-2 group-hover:text-blue-600 transition-colors">
           {task.title}
         </h3>
 
         {/* Details if any */}
         {task.details && (
-          <p className="text-xs text-slate-300 line-clamp-2 mb-3 bg-obsidian-900/60 p-2 rounded-lg border border-obsidian-800/80">
+          <p className="text-xs text-theme-textSecondary line-clamp-2 mb-3 bg-theme-elevated p-2 rounded-lg border border-theme-borderSubtle">
             {task.details}
           </p>
         )}
 
         {/* Client association if any */}
         {task.client && (
-          <div className="flex items-center gap-2 text-xs text-slate-300 mb-3 bg-obsidian-900/40 px-2 py-1 rounded">
-            <i className="fa-solid fa-user-tie text-[10px] text-slate-300"></i>
-            <span className="font-medium text-slate-300">{task.client.name}</span>
+          <div className="flex items-center gap-2 text-xs text-theme-textSecondary mb-3 bg-theme-elevated px-2 py-1 rounded border border-theme-borderSubtle">
+            <i className="fa-solid fa-user-tie text-[10px] text-theme-textMuted"></i>
+            <span className="font-medium">{task.client.name}</span>
             {task.client.phone && (
-              <span className="text-[10px] text-slate-300" dir="ltr">
+              <span className="text-[10px] text-theme-textMuted font-mono" dir="ltr">
                 {task.client.phone}
               </span>
             )}
@@ -70,32 +82,32 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
         )}
 
         {/* Footer: Quick Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-obsidian-800">
-          <span className="text-[10px] text-slate-300">
-            {new Date(task.createdAt).toLocaleDateString("ar-EG")}
+        <div className="flex items-center justify-between pt-2 border-t border-theme-border">
+          <span className="text-[10px] text-theme-textMuted">
+            {new Date(task.createdAt).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US")}
           </span>
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => onUpdateTaskStatus(task.id, task.status === "in_progress" ? "today" : "in_progress")}
-              title={task.status === "in_progress" ? "إيقاف مؤقت" : "بدء العمل الآن"}
-              className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${
+              title={task.status === "in_progress" ? t("pauseBtn") : t("startBtn")}
+              className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all flex items-center gap-1 ${
                 task.status === "in_progress"
-                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse"
-                  : "bg-obsidian-800 hover:bg-obsidian-750 text-slate-300 border-obsidian-700"
+                  ? "bg-amber-500/20 text-amber-600 border-amber-500/40 animate-pulse font-bold"
+                  : "bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary border-theme-border"
               }`}
             >
-              <i className={`fa-solid ${task.status === "in_progress" ? "fa-pause" : "fa-play"} ml-1`}></i>
-              <span>{task.status === "in_progress" ? "قيد التنفيذ" : "بدء"}</span>
+              <i className={`fa-solid ${task.status === "in_progress" ? "fa-pause" : "fa-play"}`}></i>
+              <span>{task.status === "in_progress" ? t("inProgressBadge") : t("startBtn")}</span>
             </button>
 
             <button
               onClick={() => onUpdateTaskStatus(task.id, "done")}
-              title="تم الإنجاز"
-              className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 font-bold transition-all"
+              title={t("doneBtn")}
+              className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-600 border border-emerald-500/40 font-bold transition-all flex items-center gap-1"
             >
-              <i className="fa-solid fa-check ml-1"></i>
-              <span>تم</span>
+              <i className="fa-solid fa-check"></i>
+              <span>{t("doneBtn")}</span>
             </button>
           </div>
         </div>
@@ -108,14 +120,14 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
       {/* Title & Philosophy Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span>🎯 لوحة التركيز اليومي الموحد</span>
-            <span className="text-xs font-normal text-slate-400 bg-obsidian-800 px-2 py-0.5 rounded-full border border-obsidian-700">
-              Cross-Project Matrix
+          <h2 className="text-xl font-bold text-theme-text flex items-center gap-2">
+            <span>{t("focusTitle")}</span>
+            <span className="text-xs font-normal text-theme-textMuted bg-theme-card px-2 py-0.5 rounded-full border border-theme-border">
+              {t("focusMatrixBadge")}
             </span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            لا تشتت نفسك بـ 50 مهمة؛ ركز فقط على أهم ما يحتاجه عملاؤك ومشروعاتك اليوم.
+          <p className="text-xs text-theme-textMuted mt-1">
+            {t("focusSubtitle")}
           </p>
         </div>
       </div>
@@ -124,21 +136,21 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Column 1: P1 Emergency */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b-2 border-rose-500/80">
+          <div className="flex items-center justify-between pb-2 border-b-2 border-rose-500">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-              <h3 className="text-sm font-bold text-rose-400">🚨 P1 - طوارئ وعملاء</h3>
+              <h3 className="text-sm font-bold text-rose-500">{t("p1EmergencyTitle")}</h3>
             </div>
-            <span className="text-xs font-mono font-bold bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-mono font-bold bg-rose-500/20 text-rose-500 px-2 py-0.5 rounded-full">
               {focusData.p1Urgent.length}
             </span>
           </div>
 
           <div className="space-y-3">
             {focusData.p1Urgent.length === 0 ? (
-              <div className="p-8 rounded-xl bg-obsidian-850/50 border border-obsidian-800 text-center text-slate-500 space-y-2">
-                <i className="fa-regular fa-face-smile text-2xl text-emerald-400"></i>
-                <p className="text-xs">رائع! لا توجد طوارئ معلقة حالياً.</p>
+              <div className="p-8 rounded-xl bg-theme-card border border-theme-border text-center text-theme-textMuted space-y-2">
+                <i className="fa-regular fa-face-smile text-2xl text-emerald-500"></i>
+                <p className="text-xs">{t("p1EmergencyEmpty")}</p>
               </div>
             ) : (
               focusData.p1Urgent.map(renderTaskCard)
@@ -146,31 +158,31 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
 
             <button
               onClick={() => onOpenQuickAdd("P1")}
-              className="w-full py-2.5 rounded-xl border border-dashed border-rose-500/30 hover:border-rose-500/60 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+              className="w-full py-2.5 rounded-xl border border-dashed border-rose-500/40 hover:border-rose-500 text-rose-500 hover:bg-rose-500/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
             >
               <i className="fa-solid fa-plus"></i>
-              <span>إضافة طارئ جديد</span>
+              <span>{t("p1AddBtn")}</span>
             </button>
           </div>
         </div>
 
         {/* Column 2: P2 Core Features */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b-2 border-amber-500/80">
+          <div className="flex items-center justify-between pb-2 border-b-2 border-amber-500">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <h3 className="text-sm font-bold text-amber-400">⚡ P2 - بناء وتطوير أساسي</h3>
+              <h3 className="text-sm font-bold text-amber-600">{t("p2FeaturesTitle")}</h3>
             </div>
-            <span className="text-xs font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-mono font-bold bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full">
               {focusData.p2Features.length}
             </span>
           </div>
 
           <div className="space-y-3">
             {focusData.p2Features.length === 0 ? (
-              <div className="p-8 rounded-xl bg-obsidian-850/50 border border-obsidian-800 text-center text-slate-500 space-y-2">
-                <i className="fa-solid fa-code text-2xl text-slate-600"></i>
-                <p className="text-xs">لا توجد ميزات مجدولة لليوم.</p>
+              <div className="p-8 rounded-xl bg-theme-card border border-theme-border text-center text-theme-textMuted space-y-2">
+                <i className="fa-solid fa-code text-2xl text-theme-textMuted"></i>
+                <p className="text-xs">{t("p2FeaturesEmpty")}</p>
               </div>
             ) : (
               focusData.p2Features.map(renderTaskCard)
@@ -178,31 +190,31 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
 
             <button
               onClick={() => onOpenQuickAdd("P2")}
-              className="w-full py-2.5 rounded-xl border border-dashed border-amber-500/30 hover:border-amber-500/60 text-amber-400 hover:bg-amber-500/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+              className="w-full py-2.5 rounded-xl border border-dashed border-amber-500/40 hover:border-amber-500 text-amber-600 hover:bg-amber-500/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
             >
               <i className="fa-solid fa-plus"></i>
-              <span>إضافة مهمة تطوير P2</span>
+              <span>{t("p2AddBtn")}</span>
             </button>
           </div>
         </div>
 
         {/* Column 3: P3 Quick Tweaks */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b-2 border-emerald-500/80">
+          <div className="flex items-center justify-between pb-2 border-b-2 border-emerald-500">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              <h3 className="text-sm font-bold text-emerald-400">🛠️ P3 - تحسينات ودعم سريع</h3>
+              <h3 className="text-sm font-bold text-emerald-600">{t("p3TweaksTitle")}</h3>
             </div>
-            <span className="text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-mono font-bold bg-emerald-500/20 text-emerald-600 px-2 py-0.5 rounded-full">
               {focusData.p3Tweaks.length}
             </span>
           </div>
 
           <div className="space-y-3">
             {focusData.p3Tweaks.length === 0 ? (
-              <div className="p-8 rounded-xl bg-obsidian-850/50 border border-obsidian-800 text-center text-slate-500 space-y-2">
-                <i className="fa-solid fa-check-double text-2xl text-slate-600"></i>
-                <p className="text-xs">لا توجد تعديلات خفيفة معلقة.</p>
+              <div className="p-8 rounded-xl bg-theme-card border border-theme-border text-center text-theme-textMuted space-y-2">
+                <i className="fa-solid fa-check-double text-2xl text-theme-textMuted"></i>
+                <p className="text-xs">{t("p3TweaksEmpty")}</p>
               </div>
             ) : (
               focusData.p3Tweaks.map(renderTaskCard)
@@ -210,10 +222,10 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
 
             <button
               onClick={() => onOpenQuickAdd("P3")}
-              className="w-full py-2.5 rounded-xl border border-dashed border-emerald-500/30 hover:border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+              className="w-full py-2.5 rounded-xl border border-dashed border-emerald-500/40 hover:border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
             >
               <i className="fa-solid fa-plus"></i>
-              <span>إضافة تعديل خفيف P3</span>
+              <span>{t("p3AddBtn")}</span>
             </button>
           </div>
         </div>

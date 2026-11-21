@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useI18n } from "../i18n";
 
 interface PinLockModalProps {
   isOpen: boolean;
@@ -6,6 +7,7 @@ interface PinLockModalProps {
 }
 
 export const PinLockModal: React.FC<PinLockModalProps> = ({ isOpen, onSuccess }) => {
+  const { t } = useI18n();
   const [pin, setPin] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [isLocked, setIsLocked] = useState(false);
@@ -16,7 +18,7 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({ isOpen, onSuccess })
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pin.length !== 6) {
-      setErrorMsg("الرجاء إدخال رمز المرور المكون من 6 أرقام");
+      setErrorMsg(t("loginPinLengthError"));
       return;
     }
 
@@ -34,42 +36,42 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({ isOpen, onSuccess })
 
       if (res.status === 403) {
         setIsLocked(true);
-        setErrorMsg("تم حظر هذا الجهاز بشكل دائم لتجاوز 3 محاولات خاطئة!");
+        setErrorMsg(t("loginBlockedTitle"));
       } else if (!res.ok) {
-        setErrorMsg(data.message || "رمز PIN غير صحيح");
+        setErrorMsg(data.message || t("loginPinIncorrect"));
       } else {
         onSuccess(data.token);
       }
     } catch {
-      setErrorMsg("حدث خطأ في الاتصال بالسيرفر");
+      setErrorMsg(t("loginNetworkError"));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-obsidian-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm p-8 rounded-3xl bg-obsidian-900 border border-obsidian-750 shadow-2xl text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 mx-auto flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-500/20">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="w-full max-w-sm p-8 rounded-3xl bg-theme-card border border-theme-border shadow-2xl text-center space-y-6">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 mx-auto flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-500/20">
           <i className={`fa-solid ${isLocked ? "fa-shield-virus text-rose-300" : "fa-lock"}`}></i>
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">نظام إدارة المشروعات</h2>
-          <p className="text-xs text-slate-400 mt-1">أدخل رمز الـ PIN المكون من 6 أرقام للوصول المباشر</p>
+          <h2 className="text-xl font-bold text-theme-text tracking-tight">{t("loginSystemTitle")}</h2>
+          <p className="text-xs text-theme-textMuted mt-1">{t("loginPinSubtitle")}</p>
         </div>
 
         {isLocked ? (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-2 text-right">
-            <div className="flex items-center gap-2 font-bold text-rose-400">
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs space-y-2 text-start">
+            <div className="flex items-center gap-2 font-bold text-rose-500">
               <i className="fa-solid fa-triangle-exclamation"></i>
-              <span>تم تفعيل الحظر الصارم (Hard IP Ban)</span>
+              <span>{t("loginBlockedTitle")}</span>
             </div>
-            <p className="text-[11px] leading-relaxed">
-              تم حظر عنوان جهازك من السيرفر تماماً. لفك الحظر فوراً، افتح جروب التليجرام الخاص بك وأرسل:
+            <p className="text-[11px] leading-relaxed text-theme-textSecondary">
+              {t("loginBlockedNotice")}
             </p>
-            <div className="bg-obsidian-950 p-2 rounded font-mono text-center text-cyber-blue select-all">
-              /unblock IP_ADDRESS
+            <div className="bg-theme-elevated p-2 rounded-xl font-mono text-center text-blue-600 select-all font-bold border border-theme-border">
+              {t("loginUnblockInstruction")}
             </div>
           </div>
         ) : (
@@ -81,13 +83,13 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({ isOpen, onSuccess })
                 autoFocus
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                placeholder="••••••"
-                className="w-full bg-obsidian-850 border border-obsidian-700 rounded-2xl py-3 text-center text-2xl tracking-[0.5em] text-white focus:outline-none focus:border-cyber-blue font-mono shadow-inner"
+                placeholder={t("loginPinPlaceholder")}
+                className="w-full bg-theme-input border border-theme-border rounded-2xl py-3 text-center text-2xl tracking-[0.5em] text-theme-text focus:outline-none focus:border-blue-500 font-mono shadow-inner"
               />
             </div>
 
             {errorMsg && (
-              <p className="text-xs text-rose-400 font-semibold animate-shake">
+              <p className="text-xs text-rose-500 font-semibold animate-shake">
                 {errorMsg}
               </p>
             )}
@@ -97,14 +99,14 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({ isOpen, onSuccess })
               disabled={isLoading || pin.length !== 6}
               className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 transition-all"
             >
-              {isLoading ? "جاري التحقق..." : "تأكيد الدخول"}
+              {isLoading ? t("loginVerifying") : t("loginSubmit")}
             </button>
           </form>
         )}
 
-        <div className="pt-2 text-[11px] text-slate-500 flex items-center justify-center gap-2">
-          <i className="fa-solid fa-fingerprint text-xs"></i>
-          <span>حماية مشفرة ممتدة 90 يوماً</span>
+        <div className="pt-2 text-[11px] text-theme-textMuted flex items-center justify-center gap-2">
+          <i className="fa-solid fa-fingerprint text-xs text-blue-500"></i>
+          <span>{t("loginEncryptionNote")}</span>
         </div>
       </div>
     </div>

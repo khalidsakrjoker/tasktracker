@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Project, Client } from "../types";
+import { useI18n } from "../i18n";
+import { SearchableClientSelect } from "./SearchableClientSelect";
+import { ScalableProjectSelect } from "./ScalableProjectSelect";
 
 interface QuickTaskDrawerProps {
   isOpen: boolean;
@@ -19,6 +22,7 @@ interface QuickTaskDrawerProps {
     projectId: number;
     clientId?: number;
   }) => void;
+  onCreateClient: (data: { name: string; phone?: string; company?: string }) => Promise<Client | null>;
 }
 
 export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
@@ -29,8 +33,10 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
   initialPriority,
   initialProjectId,
   initialClientId,
-  onSaveTask
+  onSaveTask,
+  onCreateClient
 }) => {
+  const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [type, setType] = useState<"bug" | "feature" | "tweak" | "support">("feature");
@@ -46,6 +52,12 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
     if (initialClientId) setClientId(initialClientId);
   }, [initialPriority, initialProjectId, initialClientId, isOpen]);
 
+  useEffect(() => {
+    if (projects.length > 0 && !projects.some((p) => p.id === projectId)) {
+      setProjectId(projects[0].id);
+    }
+  }, [projects, projectId]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -53,8 +65,8 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
     if (!title.trim()) return;
 
     onSaveTask({
-      title,
-      details,
+      title: title.trim(),
+      details: details.trim() || undefined,
       type,
       priority,
       status,
@@ -70,20 +82,20 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-lg bg-obsidian-900 border-r border-obsidian-700 h-full flex flex-col justify-between shadow-2xl p-6 overflow-y-auto">
+      <div className="w-full max-w-lg bg-theme-card border-x border-theme-border h-full flex flex-col justify-between shadow-2xl p-6 overflow-y-auto">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-obsidian-800">
+          <div className="flex items-center justify-between pb-3 border-b border-theme-border">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <i className="fa-solid fa-bolt-lightning text-cyber-blue"></i>
-                <span>تسجيل مهمة خاطفة (Quick Capture)</span>
+              <h2 className="text-lg font-bold text-theme-text flex items-center gap-2">
+                <i className="fa-solid fa-bolt-lightning text-blue-600"></i>
+                <span>{t("drawerTitle")}</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">فرّغ المهمة من عقلك في 5 ثوانٍ ولن تضيع أبداً</p>
+              <p className="text-xs text-theme-textMuted mt-0.5">{t("drawerSubtitle")}</p>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-obsidian-800 hover:bg-obsidian-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-lg bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary hover:text-theme-text flex items-center justify-center transition-colors"
             >
               <i className="fa-solid fa-xmark"></i>
             </button>
@@ -92,8 +104,8 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Task Title */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                عنوان المهمة / الطلب *
+              <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
+                {t("taskTitleLabel")}
               </label>
               <input
                 type="text"
@@ -101,89 +113,74 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
                 autoFocus
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="مثال: تعديل زر طباعة الإيصال لعميل الهرم"
-                className="w-full bg-obsidian-800 border border-obsidian-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue transition-all"
+                placeholder={t("taskTitlePlaceholder")}
+                className="w-full bg-theme-input border border-theme-border rounded-xl px-4 py-2.5 text-sm text-theme-text placeholder-theme-textMuted focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
               />
             </div>
 
-            {/* Project Selection */}
+            {/* Scalable Project Selector */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">المشروع التابع له *</label>
-              <div className="grid grid-cols-3 gap-2">
-                {projects.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setProjectId(p.id)}
-                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                      projectId === p.id
-                        ? "bg-obsidian-750 text-white border-blue-500 shadow-md shadow-blue-500/10"
-                        : "bg-obsidian-850 text-slate-400 border-obsidian-750 hover:bg-obsidian-800 hover:text-white"
-                    }`}
-                  >
-                    <span
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: p.color }}
-                    ></span>
-                    <span className="truncate w-full text-center">{p.name}</span>
-                  </button>
-                ))}
-              </div>
+              <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
+                {t("projectLabel")}
+              </label>
+              <ScalableProjectSelect
+                projects={projects}
+                selectedProjectId={projectId}
+                onSelectProject={(pid) => setProjectId(pid)}
+              />
             </div>
 
-            {/* Client Selection */}
+            {/* Searchable Client Combobox with Inline Creation */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">العميل مقدم الطلب (اختياري)</label>
-              <select
-                value={clientId || ""}
-                onChange={(e) => setClientId(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                className="w-full bg-obsidian-800 border border-obsidian-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyber-blue"
-              >
-                <option value="">بدون عميل محدد</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.company ? `(${c.company})` : ""}
-                  </option>
-                ))}
-              </select>
+              <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
+                {t("clientLabel")}
+              </label>
+              <SearchableClientSelect
+                clients={clients}
+                selectedClientId={clientId}
+                onSelectClient={(cid) => setClientId(cid)}
+                onCreateClient={onCreateClient}
+              />
             </div>
 
             {/* Priority Selector */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">الأولوية ومستوى الخطر</label>
+              <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
+                {t("priorityLabel")}
+              </label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setPriority("P1")}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                  className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all ${
                     priority === "P1"
-                      ? "bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-md shadow-rose-500/10"
-                      : "bg-obsidian-850 text-slate-400 border-obsidian-750 hover:text-rose-400"
+                      ? "bg-rose-500/20 text-rose-500 border-rose-500 shadow-md shadow-rose-500/10 font-extrabold"
+                      : "bg-theme-elevated text-theme-textSecondary border-theme-border hover:text-rose-500"
                   }`}
                 >
-                  🔴 P1 - طوارئ عاجلة
+                  {t("priorityP1")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setPriority("P2")}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                  className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all ${
                     priority === "P2"
-                      ? "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/10"
-                      : "bg-obsidian-850 text-slate-400 border-obsidian-750 hover:text-amber-400"
+                      ? "bg-amber-500/20 text-amber-600 border-amber-500 shadow-md shadow-amber-500/10 font-extrabold"
+                      : "bg-theme-elevated text-theme-textSecondary border-theme-border hover:text-amber-500"
                   }`}
                 >
-                  🟡 P2 - تطوير وبناء
+                  {t("priorityP2")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setPriority("P3")}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                  className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all ${
                     priority === "P3"
-                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/10"
-                      : "bg-obsidian-850 text-slate-400 border-obsidian-750 hover:text-emerald-400"
+                      ? "bg-emerald-500/20 text-emerald-600 border-emerald-500 shadow-md shadow-emerald-500/10 font-extrabold"
+                      : "bg-theme-elevated text-theme-textSecondary border-theme-border hover:text-emerald-500"
                   }`}
                 >
-                  🟢 P3 - تحسين هادئ
+                  {t("priorityP3")}
                 </button>
               </div>
             </div>
@@ -191,60 +188,66 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
             {/* Type & Time Estimation */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">نوع المهمة</label>
+                <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
+                  {t("typeLabel")}
+                </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as any)}
-                  className="w-full bg-obsidian-800 border border-obsidian-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                  className="w-full bg-theme-input border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text focus:outline-none focus:border-blue-500"
                 >
-                  <option value="feature">✨ ميزة جديدة (Feature)</option>
-                  <option value="bug">🐞 إصلاح خطأ (Bug)</option>
-                  <option value="tweak">⚡ تعديل خفيف (Tweak)</option>
-                  <option value="support">📞 دعم فني (Support)</option>
+                  <option value="feature">✨ {t("typeFeature")}</option>
+                  <option value="bug">🐞 {t("typeBug")}</option>
+                  <option value="tweak">⚡ {t("typeTweak")}</option>
+                  <option value="support">📞 {t("typeSupport")}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">الوقت المقدر</label>
+                <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
+                  {t("estTimeLabel")}
+                </label>
                 <select
                   value={estimatedMinutes}
                   onChange={(e) => setEstimatedMinutes(parseInt(e.target.value, 10))}
-                  className="w-full bg-obsidian-800 border border-obsidian-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                  className="w-full bg-theme-input border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text focus:outline-none focus:border-blue-500"
                 >
-                  <option value={15}>15 دقيقة</option>
-                  <option value={30}>30 دقيقة</option>
-                  <option value={60}>ساعة واحدة</option>
-                  <option value={120}>ساعتان</option>
-                  <option value={240}>4 ساعات</option>
+                  <option value={15}>{t("time15m")}</option>
+                  <option value={30}>{t("time30m")}</option>
+                  <option value={60}>{t("time1h")}</option>
+                  <option value={120}>{t("time2h")}</option>
+                  <option value={240}>{t("time4h")}</option>
                 </select>
               </div>
             </div>
 
             {/* Details / Notes */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">ملاحظات وتفاصيل الكود</label>
+              <label className="block text-xs font-semibold text-theme-textSecondary mb-1.5">
+                {t("detailsLabel")}
+              </label>
               <textarea
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
-                placeholder="سطر كود، دالة، جدول في الداتابيز، أو متطلبات العميل بالتفصيل..."
+                placeholder={t("detailsPlaceholder")}
                 rows={3}
-                className="w-full bg-obsidian-800 border border-obsidian-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyber-blue font-mono"
+                className="w-full bg-theme-input border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text placeholder-theme-textMuted focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
 
-            <div className="pt-4 border-t border-obsidian-800 flex items-center justify-end gap-3">
+            <div className="pt-4 border-t border-theme-border flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-slate-300 text-xs font-semibold transition-all"
+                className="px-4 py-2 rounded-xl bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary text-xs font-semibold transition-all"
               >
-                إلغاء
+                {t("cancelBtn")}
               </button>
               <button
                 type="submit"
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
               >
-                حفظ المهمة (Enter)
+                {t("saveTaskSubmit")}
               </button>
             </div>
           </form>

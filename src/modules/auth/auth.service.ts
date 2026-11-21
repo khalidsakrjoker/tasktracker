@@ -1,4 +1,4 @@
-﻿import crypto from "crypto";
+import crypto from "crypto";
 import { prisma } from "../../shared/db.js";
 import { config } from "../../config/index.js";
 import { ForbiddenError, UnauthorizedError } from "../../shared/errors.js";

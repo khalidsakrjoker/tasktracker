@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { AuthService } from "./auth.service.js";
 import { UnauthorizedError } from "../../shared/errors.js";
 

@@ -55,7 +55,7 @@ app.use("/api/tasks", requireAuth, tasksRouter);
 const clientDist = path.join(process.cwd(), "client", "dist");
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
-  app.get("*", (req: Request, res: Response, next: NextFunction) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api/")) {
       return next();
     }
