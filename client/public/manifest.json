@@ -2,7 +2,7 @@
   "name": "TaskTracker Studio",
   "short_name": "TaskTracker",
   "description": "High-Performance Project Operations & Task Management Studio",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

@@ -36,9 +36,26 @@ const MainAppContent: React.FC = () => {
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
+  // Helper to detect if running in standalone PWA window or already installed
+  const checkIsStandaloneOrInstalled = (): boolean => {
+    if (typeof window === "undefined") return false;
+    const isStandaloneMode =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: window-controls-overlay)").matches ||
+      window.matchMedia("(display-mode: minimal-ui)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches;
+
+    const isIosStandalone = (window.navigator as any).standalone === true;
+    const params = new URLSearchParams(window.location.search);
+    const isPwaParam = params.get("source") === "pwa" || params.has("pwa") || params.has("quick");
+    const isStoredInstalled = localStorage.getItem("tasktracker_pwa_installed") === "true";
+
+    return isStandaloneMode || isIosStandalone || isPwaParam || isStoredInstalled;
+  };
+
   // PWA Installation & Shortcuts State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isAppInstalled, setIsAppInstalled] = useState(false);
+  const [isAppInstalled, setIsAppInstalled] = useState<boolean>(() => checkIsStandaloneOrInstalled());
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
   // Check initial authentication
@@ -55,19 +72,48 @@ const MainAppContent: React.FC = () => {
 
   // PWA lifecycle & URL query parameters listener
   useEffect(() => {
-    // Detect if running in standalone PWA window (Desktop or Mobile)
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
-    if (isStandalone) {
+    // If currently running in standalone window or previously installed, set flag & persist
+    if (checkIsStandaloneOrInstalled()) {
       setIsAppInstalled(true);
+      localStorage.setItem("tasktracker_pwa_installed", "true");
     }
+
+    // Media query listeners for dynamic display-mode transitions
+    const mediaQueries = [
+      "(display-mode: standalone)",
+      "(display-mode: window-controls-overlay)",
+      "(display-mode: minimal-ui)",
+      "(display-mode: fullscreen)"
+    ];
+
+    const cleanups: Array<() => void> = [];
+    mediaQueries.forEach((q) => {
+      try {
+        const mql = window.matchMedia(q);
+        const handler = (e: MediaQueryListEvent) => {
+          if (e.matches) {
+            setIsAppInstalled(true);
+            localStorage.setItem("tasktracker_pwa_installed", "true");
+          }
+        };
+        mql.addEventListener("change", handler);
+        cleanups.push(() => mql.removeEventListener("change", handler));
+      } catch (err) {
+        // ignore for older browsers
+      }
+    });
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      // If already installed or standalone, do not capture or show prompt
+      if (!checkIsStandaloneOrInstalled()) {
+        setDeferredPrompt(e);
+      }
     };
 
     const handleAppInstalled = () => {
       setIsAppInstalled(true);
+      localStorage.setItem("tasktracker_pwa_installed", "true");
       setDeferredPrompt(null);
     };
 
@@ -87,6 +133,7 @@ const MainAppContent: React.FC = () => {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
+      cleanups.forEach((cleanup) => cleanup());
     };
   }, []);
 
@@ -96,6 +143,7 @@ const MainAppContent: React.FC = () => {
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
         setIsAppInstalled(true);
+        localStorage.setItem("tasktracker_pwa_installed", "true");
       }
       setDeferredPrompt(null);
     }
