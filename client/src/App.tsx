@@ -422,6 +422,8 @@ const MainAppContent: React.FC = () => {
               {activeView === "focus" && (
                 <TodayFocusView
                   focusData={focusData}
+                  projects={projects}
+                  clients={clients}
                   onUpdateTaskStatus={handleUpdateTaskStatus}
                   onDeleteTask={handleDeleteTask}
                   onOpenQuickAdd={(prio) => {

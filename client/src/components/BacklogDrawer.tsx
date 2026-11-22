@@ -130,48 +130,48 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                     const images = parseImageUrls(task.imageUrl);
                     if (images.length === 1) {
                       return (
-                        <div className="rounded-lg overflow-hidden border border-theme-borderSubtle">
-                          <img
-                            src={images[0]}
-                            alt={task.title}
+                        <div className="flex items-center">
+                          <button
+                            type="button"
                             onClick={() => onPreviewImage(images, 0, task.title)}
-                            className="w-full h-24 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
-                            loading="lazy"
-                          />
+                            className="relative w-14 h-9 rounded-md overflow-hidden border border-theme-borderSubtle hover:border-blue-500 transition cursor-zoom-in bg-black/20"
+                          >
+                            <img
+                              src={images[0]}
+                              alt={task.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </button>
                         </div>
                       );
                     }
                     if (images.length > 1) {
                       return (
-                        <div>
-                          <div className={`grid ${images.length === 2 ? "grid-cols-2" : "grid-cols-3"} gap-1 rounded-lg overflow-hidden`}>
-                            {images.slice(0, 3).map((img, idx) => (
-                              <div
-                                key={idx}
-                                className="relative h-16 rounded overflow-hidden border border-theme-borderSubtle bg-black/20"
-                              >
-                                <img
-                                  src={img}
-                                  alt={`Thumb ${idx + 1}`}
-                                  onClick={() => onPreviewImage(images, idx, task.title)}
-                                  className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform"
-                                  loading="lazy"
-                                />
-                                {idx === 2 && images.length > 3 && (
-                                  <div
-                                    onClick={() => onPreviewImage(images, idx, task.title)}
-                                    className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-xs font-bold cursor-zoom-in"
-                                  >
-                                    +{images.length - 2}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          <span className="text-[10px] text-theme-textMuted flex items-center gap-1 mt-1 justify-end font-mono">
-                            <i className="fa-regular fa-images text-[9px] text-blue-400"></i>
-                            <span>{images.length} {t("imagesAttached")}</span>
-                          </span>
+                        <div className="flex items-center gap-1.5">
+                          {images.slice(0, 2).map((img, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => onPreviewImage(images, idx, task.title)}
+                              className="relative w-12 h-9 rounded-md overflow-hidden border border-theme-borderSubtle hover:border-blue-500 transition cursor-zoom-in bg-black/20"
+                            >
+                              <img
+                                src={img}
+                                alt={`Thumb ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => onPreviewImage(images, 0, task.title)}
+                            className="px-1.5 py-1 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[10px] font-mono font-bold flex items-center gap-1"
+                          >
+                            <i className="fa-regular fa-images text-[9px]"></i>
+                            <span>{images.length}</span>
+                          </button>
                         </div>
                       );
                     }

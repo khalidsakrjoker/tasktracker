@@ -102,6 +102,16 @@ export interface Translations {
   backlogDrawerSubtitle: string;
   backlogEmpty: string;
   defaultProjectDesc: string;
+  filterAllProjects: string;
+  filterAllClients: string;
+  filterByProject: string;
+  filterByClient: string;
+  searchTasksPlaceholder: string;
+  clearFilters: string;
+  showingTasks: string;
+  ofTotalTasks: string;
+  tasksWord: string;
+  noMatchingTasks: string;
 
   // Clients CRM
   clientsTitle: string;
@@ -267,6 +277,16 @@ const translations: Record<Language, Translations> = {
     backlogDrawerSubtitle: "Deferred tasks not scheduled for today. Bring them to focus anytime.",
     backlogEmpty: "Backlog is currently empty.",
     defaultProjectDesc: "Active software project in TaskTracker Studio",
+    filterAllProjects: "All Projects",
+    filterAllClients: "All Clients",
+    filterByProject: "Filter by Project",
+    filterByClient: "Filter by Client",
+    searchTasksPlaceholder: "Quick search in today's tasks...",
+    clearFilters: "Clear Filters",
+    showingTasks: "Showing",
+    ofTotalTasks: "of",
+    tasksWord: "tasks",
+    noMatchingTasks: "No tasks match the active filters.",
 
     clientsTitle: "Clients & Stakeholders Directory",
     clientsSubtitle: "Manage client contacts, software requests, and project associations seamlessly.",
@@ -426,6 +446,16 @@ const translations: Record<Language, Translations> = {
     backlogDrawerSubtitle: "مهام مؤجلة لم يحن وقتها اليوم؛ اضغط 'نقل للتركيز اليومي' لإعادتها للوحة فوراً.",
     backlogEmpty: "صندوق الانتظار فارغ حالياً، لا توجد مهام مؤجلة.",
     defaultProjectDesc: "مشروع نشط في نظام TaskTracker",
+    filterAllProjects: "كل المشروعات",
+    filterAllClients: "كل العملاء",
+    filterByProject: "فلترة بالمشروع",
+    filterByClient: "فلترة بالعميل",
+    searchTasksPlaceholder: "بحث سريع في مهام اليوم (بالعنوان أو التفاصيل أو العميل)...",
+    clearFilters: "إلغاء الفلاتر",
+    showingTasks: "عرض",
+    ofTotalTasks: "من أصل",
+    tasksWord: "مهمة",
+    noMatchingTasks: "لا توجد مهام تطابق معايير الفلترة المحددة.",
 
     clientsTitle: "دليل العملاء والمستفيدين",
     clientsSubtitle: "سجل عملاء المشروعات؛ تواصل معهم وتابع طلباتهم بدون نسيان.",
