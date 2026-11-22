@@ -1,4 +1,4 @@
-const CACHE_NAME = "tasktracker-cache-v2";
+const CACHE_NAME = "tasktracker-cache-v3";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -31,6 +31,10 @@ self.addEventListener("activate", (event) => {
 
 // Fetch event: network first for API, cache fallback for static assets
 self.addEventListener("fetch", (event) => {
+  // Only intercept GET requests with standard HTTP/HTTPS schemes (ignore chrome-extension, blob, etc.)
+  if (event.request.method !== "GET") return;
+  if (!event.request.url.startsWith("http://") && !event.request.url.startsWith("https://")) return;
+
   const url = new URL(event.request.url);
 
   // Let API requests bypass cache completely
@@ -41,7 +45,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response.status === 200) {
+        if (response.status === 200 && (response.type === "basic" || response.type === "cors")) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
