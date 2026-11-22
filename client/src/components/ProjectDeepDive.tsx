@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Project, Task, Client } from "../types";
 import { useI18n } from "../i18n";
+import { parseImageUrls } from "../utils/imageCompressor";
 
 interface ProjectDeepDiveProps {
   project: Project;
@@ -10,7 +11,7 @@ interface ProjectDeepDiveProps {
   onOpenQuickAdd: (priority?: "P1" | "P2" | "P3", defaultProjectId?: number) => void;
   onDeleteTask: (taskId: number) => void;
   onEditTask?: (task: Task) => void;
-  onPreviewImage?: (imageUrl: string, title: string) => void;
+  onPreviewImage?: (images: string[] | string, indexOrTitle?: number | string, title?: string) => void;
 }
 
 export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
@@ -213,17 +214,58 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                         {task.title}
                       </h4>
 
-                      {task.imageUrl && onPreviewImage && (
-                        <div className="rounded-lg overflow-hidden border border-theme-borderSubtle">
-                          <img
-                            src={task.imageUrl}
-                            alt={task.title}
-                            onClick={() => onPreviewImage(task.imageUrl!, task.title)}
-                            className="w-full h-24 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
-                            loading="lazy"
-                          />
-                        </div>
-                      )}
+                      {/* Image Thumbnail(s) */}
+                      {onPreviewImage && (() => {
+                        const images = parseImageUrls(task.imageUrl);
+                        if (images.length === 1) {
+                          return (
+                            <div className="rounded-lg overflow-hidden border border-theme-borderSubtle">
+                              <img
+                                src={images[0]}
+                                alt={task.title}
+                                onClick={() => onPreviewImage(images, 0, task.title)}
+                                className="w-full h-24 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                                loading="lazy"
+                              />
+                            </div>
+                          );
+                        }
+                        if (images.length > 1) {
+                          return (
+                            <div>
+                              <div className={`grid ${images.length === 2 ? "grid-cols-2" : "grid-cols-3"} gap-1 rounded-lg overflow-hidden`}>
+                                {images.slice(0, 3).map((img, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="relative h-16 rounded overflow-hidden border border-theme-borderSubtle bg-black/20"
+                                  >
+                                    <img
+                                      src={img}
+                                      alt={`Thumb ${idx + 1}`}
+                                      onClick={() => onPreviewImage(images, idx, task.title)}
+                                      className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform"
+                                      loading="lazy"
+                                    />
+                                    {idx === 2 && images.length > 3 && (
+                                      <div
+                                        onClick={() => onPreviewImage(images, idx, task.title)}
+                                        className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-xs font-bold cursor-zoom-in"
+                                      >
+                                        +{images.length - 2}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <span className="text-[10px] text-theme-textMuted flex items-center gap-1 mt-1 justify-end font-mono">
+                                <i className="fa-regular fa-images text-[9px] text-blue-400"></i>
+                                <span>{images.length} {t("imagesAttached")}</span>
+                              </span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
 
                       {task.client && (
                         <div className="text-[11px] text-theme-textMuted flex items-center gap-1">

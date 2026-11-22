@@ -38,7 +38,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
   onSaveTask,
   onCreateClient
 }) => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [type, setType] = useState<"bug" | "feature" | "tweak" | "support">("feature");
@@ -47,26 +47,28 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
   const [projectId, setProjectId] = useState<number>(projects[0]?.id || 1);
   const [clientId, setClientId] = useState<number | undefined>(undefined);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Support Ctrl+V paste of screenshots directly in the drawer
+  // Support Ctrl+V paste of multiple screenshots directly in the drawer
   useEffect(() => {
     if (!isOpen) return;
     const handlePaste = async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
       if (!items) return;
+      const files: File[] = [];
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.startsWith("image/")) {
-          e.preventDefault();
           const file = items[i].getAsFile();
-          if (file) {
-            uploadAndAttachImage(file);
-            break;
-          }
+          if (file) files.push(file);
         }
+      }
+      if (files.length > 0) {
+        e.preventDefault();
+        uploadAndAttachImages(files);
       }
     };
 
@@ -74,32 +76,48 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
     return () => window.removeEventListener("paste", handlePaste);
   }, [isOpen]);
 
-  const uploadAndAttachImage = async (file: File | Blob) => {
+  const uploadAndAttachImages = async (files: (File | Blob)[]) => {
     setIsUploading(true);
-    try {
-      const base64Data = await compressAndSanitizeImage(file, 1280, 0.75);
-      const res = await fetch("/api/tasks/upload-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64Data })
-      });
+    setUploadProgress({ current: 0, total: files.length });
+    const newlyUploaded: string[] = [];
 
-      if (res.ok) {
-        const data = await res.json();
-        setImageUrl(data.url);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        setUploadProgress({ current: i + 1, total: files.length });
+        const base64Data = await compressAndSanitizeImage(files[i], 1280, 0.75);
+        const res = await fetch("/api/tasks/upload-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64Data })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          newlyUploaded.push(data.url);
+        }
+      }
+
+      if (newlyUploaded.length > 0) {
+        setImageUrls((prev) => [...prev, ...newlyUploaded]);
       }
     } catch (err) {
       console.error("Image upload error:", err);
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      uploadAndAttachImage(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      uploadAndAttachImages(Array.from(files));
     }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setImageUrls((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   useEffect(() => {
@@ -123,7 +141,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
     onSaveTask({
       title: title.trim(),
       details: details.trim() || undefined,
-      imageUrl: imageUrl || undefined,
+      imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : undefined,
       type,
       priority,
       status,
@@ -134,7 +152,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
 
     setTitle("");
     setDetails("");
-    setImageUrl(null);
+    setImageUrls([]);
     onClose();
   };
 
@@ -306,12 +324,17 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
               />
             </div>
 
-            {/* Image Attachment Section */}
-            <div className="p-3 rounded-2xl bg-theme-elevated/70 border border-theme-border space-y-2">
+            {/* Image Attachments Section (Multiple Images & Screenshots Supported) */}
+            <div className="p-3.5 rounded-2xl bg-theme-elevated/70 border border-theme-border space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-theme-text flex items-center gap-1.5">
-                  <i className="fa-regular fa-image text-blue-500"></i>
+                  <i className="fa-regular fa-images text-blue-500"></i>
                   <span>{t("attachImage")}</span>
+                  {imageUrls.length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold font-mono">
+                      {imageUrls.length}
+                    </span>
+                  )}
                 </span>
                 <span className="text-[10px] text-theme-textMuted">{t("pasteImageHint")}</span>
               </div>
@@ -320,40 +343,71 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleFileChange}
                 className="hidden"
               />
 
-              {imageUrl ? (
-                <div className="flex items-center justify-between p-2 rounded-xl bg-theme-card border border-theme-border">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={imageUrl}
-                      alt="Thumbnail"
-                      className="w-10 h-10 object-cover rounded-lg border border-theme-border"
-                    />
-                    <span className="text-xs font-semibold text-blue-500">{t("imageAttached")}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setImageUrl(null)}
-                    title={t("removeImage")}
-                    className="p-1.5 rounded-lg bg-theme-hover hover:bg-rose-500/20 text-theme-textMuted hover:text-rose-500 transition text-xs"
-                  >
-                    <i className="fa-solid fa-trash-can"></i>
-                  </button>
+              {/* Upload Progress */}
+              {isUploading && uploadProgress && (
+                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center gap-2 text-xs text-blue-400 animate-pulse">
+                  <i className="fa-solid fa-spinner fa-spin"></i>
+                  <span>
+                    {lang === "ar"
+                      ? `جاري معالجة ورفع الصورة (${uploadProgress.current} من ${uploadProgress.total})...`
+                      : `Compressing and uploading image (${uploadProgress.current} of ${uploadProgress.total})...`}
+                  </span>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  disabled={isUploading}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-2 px-3 rounded-xl border border-dashed border-theme-border hover:border-blue-500 bg-theme-card/60 hover:bg-theme-card text-xs text-theme-textSecondary hover:text-blue-500 flex items-center justify-center gap-2 transition cursor-pointer"
-                >
-                  <i className={`fa-solid ${isUploading ? "fa-spinner fa-spin" : "fa-cloud-arrow-up"} text-sm text-blue-500`}></i>
-                  <span>{isUploading ? "جاري ضغط ومعالجة الصورة..." : t("attachImage")}</span>
-                </button>
               )}
+
+              {/* Attached Thumbnails Grid */}
+              {imageUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {imageUrls.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative rounded-xl overflow-hidden border border-theme-border bg-theme-card aspect-video"
+                    >
+                      <img
+                        src={url}
+                        alt={`Attachment ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage(idx);
+                        }}
+                        title={t("removeImage")}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-md bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow"
+                      >
+                        <i className="fa-solid fa-trash-can text-[10px]"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                disabled={isUploading}
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-full py-2.5 px-3 rounded-xl border border-dashed transition cursor-pointer text-xs flex items-center justify-center gap-2 ${
+                  imageUrls.length > 0
+                    ? "border-blue-500/40 hover:border-blue-500 bg-blue-500/5 hover:bg-blue-500/10 text-blue-400 font-semibold"
+                    : "border-theme-border hover:border-blue-500 bg-theme-card/60 hover:bg-theme-card text-theme-textSecondary hover:text-blue-500"
+                }`}
+              >
+                <i className={`fa-solid ${isUploading ? "fa-spinner fa-spin" : imageUrls.length > 0 ? "fa-circle-plus" : "fa-cloud-arrow-up"} text-sm text-blue-500`}></i>
+                <span>
+                  {isUploading
+                    ? lang === "ar" ? "جاري معالجة الصور..." : "Processing images..."
+                    : imageUrls.length > 0
+                    ? t("addImage")
+                    : t("attachImage")}
+                </span>
+              </button>
             </div>
 
             <div className="pt-4 border-t border-theme-border flex items-center justify-end gap-3">

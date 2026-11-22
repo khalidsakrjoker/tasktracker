@@ -200,4 +200,51 @@ describe("API Integration Endpoints Full Cycle", () => {
       .delete(`/api/tasks/${taskId}`)
       .set("Authorization", `Bearer ${authToken}`);
   });
+
+  it("Supports multiple images per task and cleans up removed/completed images", async () => {
+    const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    const up1 = await request(app).post("/api/tasks/upload-image").set("Authorization", `Bearer ${authToken}`).send({ image: samplePng });
+    const up2 = await request(app).post("/api/tasks/upload-image").set("Authorization", `Bearer ${authToken}`).send({ image: samplePng });
+    expect(up1.status).toBe(200);
+    expect(up2.status).toBe(200);
+
+    const projectsRes = await request(app).get("/api/projects").set("Authorization", `Bearer ${authToken}`);
+    const projectId = projectsRes.body[0].id;
+
+    // Create task with 2 images
+    const multiUrls = JSON.stringify([up1.body.url, up2.body.url]);
+    const taskRes = await request(app)
+      .post("/api/tasks")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        title: "مهمة مع صور متعددة",
+        priority: "P2",
+        projectId,
+        imageUrl: multiUrls
+      });
+    expect(taskRes.status).toBe(201);
+    const taskId = taskRes.body.id;
+
+    // Update task to remove up1 (keeping only up2)
+    const singleUrl = JSON.stringify([up2.body.url]);
+    const updateRes = await request(app)
+      .put(`/api/tasks/${taskId}`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ imageUrl: singleUrl });
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.imageUrl).toBe(singleUrl);
+
+    // Complete task -> clears imageUrl and deletes up2
+    const doneRes = await request(app)
+      .put(`/api/tasks/${taskId}`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ status: "done" });
+    expect(doneRes.status).toBe(200);
+    expect(doneRes.body.imageUrl).toBeNull();
+
+    // Clean up
+    await request(app)
+      .delete(`/api/tasks/${taskId}`)
+      .set("Authorization", `Bearer ${authToken}`);
+  });
 });

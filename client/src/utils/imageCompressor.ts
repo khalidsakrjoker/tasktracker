@@ -64,3 +64,24 @@ export async function compressAndSanitizeImage(
     reader.readAsDataURL(fileOrBlob);
   });
 }
+
+/**
+ * Safely parse imageUrl string from Task model.
+ * Handles null/undefined, legacy single URL string, and JSON-encoded array of URLs.
+ */
+export function parseImageUrls(raw?: string | null): string[] {
+  if (!raw || typeof raw !== "string") return [];
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
+      }
+    } catch {
+      // fallback to single string
+    }
+  }
+  return [trimmed];
+}

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Task, TodayFocusData } from "../types";
 import { useI18n } from "../i18n";
 import { BacklogDrawer } from "./BacklogDrawer";
+import { parseImageUrls } from "../utils/imageCompressor";
 
 interface TodayFocusViewProps {
   focusData: TodayFocusData;
@@ -10,7 +11,7 @@ interface TodayFocusViewProps {
   onOpenQuickAdd: (priority?: "P1" | "P2" | "P3") => void;
   onEditTask: (task: Task) => void;
   onReorderTask: (taskId: number, direction: "up" | "down", list: Task[]) => void;
-  onPreviewImage: (imageUrl: string, title: string) => void;
+  onPreviewImage: (images: string[] | string, indexOrTitle?: number | string, title?: string) => void;
 }
 
 export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
@@ -35,6 +36,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
   };
 
   const renderTaskCard = (task: Task, index: number, list: Task[]) => {
+    const images = parseImageUrls(task.imageUrl);
     return (
       <div
         key={task.id}
@@ -77,17 +79,17 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
           </p>
         )}
 
-        {/* Image Attachment Thumbnail with click to open full preview */}
-        {task.imageUrl && (
+        {/* Single Image Attachment */}
+        {images.length === 1 && (
           <div className="mb-3">
             <button
               type="button"
-              onClick={() => onPreviewImage(task.imageUrl!, task.title)}
+              onClick={() => onPreviewImage(images, 0, task.title)}
               className="group/img relative block w-full overflow-hidden rounded-lg border border-theme-borderSubtle hover:border-blue-500/50 transition-all cursor-zoom-in bg-black/20"
               title={lang === "ar" ? "اضغط لتكبير الصورة كاملة" : "Click to view full image"}
             >
               <img
-                src={task.imageUrl}
+                src={images[0]}
                 alt={task.title}
                 className="w-full max-h-32 object-cover rounded-lg group-hover/img:scale-[1.03] transition-transform duration-200"
                 loading="lazy"
@@ -97,6 +99,48 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
                 <span>{lang === "ar" ? "عرض الصورة كاملة" : "Enlarge Image"}</span>
               </div>
             </button>
+          </div>
+        )}
+
+        {/* Multiple Image Attachments (Gallery Grid) */}
+        {images.length > 1 && (
+          <div className="mb-3">
+            <div className={`grid ${images.length === 2 ? "grid-cols-2" : "grid-cols-3"} gap-1.5 rounded-lg overflow-hidden`}>
+              {images.slice(0, 3).map((img, idx) => {
+                const isThirdAndMore = idx === 2 && images.length > 3;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => onPreviewImage(images, idx, task.title)}
+                    className="group/img relative h-20 rounded-md overflow-hidden border border-theme-borderSubtle hover:border-blue-500 transition-all cursor-zoom-in bg-black/30"
+                    title={lang === "ar" ? `معاينة الصورة ${idx + 1}` : `Preview image ${idx + 1}`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${task.title} - ${idx + 1}`}
+                      className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200"
+                      loading="lazy"
+                    />
+                    {isThirdAndMore ? (
+                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white font-bold text-xs">
+                        +{images.length - 2}
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white text-xs">
+                        <i className="fa-solid fa-magnifying-glass-plus"></i>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-1 flex items-center justify-end">
+              <span className="text-[10px] text-theme-textMuted flex items-center gap-1 font-mono">
+                <i className="fa-regular fa-images text-[9px] text-blue-400"></i>
+                <span>{images.length} {t("imagesAttached")}</span>
+              </span>
+            </div>
           </div>
         )}
 

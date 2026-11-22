@@ -32,17 +32,38 @@ export interface UpdateTaskInput {
   clientId?: number | null;
 }
 
-export function deleteUploadedImage(imageUrl?: string | null): void {
-  if (!imageUrl || !imageUrl.startsWith("/uploads/tasks/")) return;
-  try {
-    const filename = path.basename(imageUrl);
-    const filePath = path.resolve(process.cwd(), "uploads", "tasks", filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      logger.info({ filePath }, "Deleted task image from disk to conserve server storage");
+export function parseImageUrls(raw?: string | null): string[] {
+  if (!raw || typeof raw !== "string") return [];
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
+      }
+    } catch {
+      // fallback to single string
     }
-  } catch (err) {
-    logger.warn({ err, imageUrl }, "Failed to delete task image file");
+  }
+  return [trimmed];
+}
+
+export function deleteUploadedImage(imageUrl?: string | null): void {
+  if (!imageUrl) return;
+  const urls = parseImageUrls(imageUrl);
+  for (const url of urls) {
+    if (!url.startsWith("/uploads/tasks/")) continue;
+    try {
+      const filename = path.basename(url);
+      const filePath = path.resolve(process.cwd(), "uploads", "tasks", filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        logger.info({ filePath }, "Deleted task image from disk to conserve server storage");
+      }
+    } catch (err) {
+      logger.warn({ err, url }, "Failed to delete task image file");
+    }
   }
 }
 
@@ -167,11 +188,21 @@ export class TasksService {
 
     const isMarkingDone = data.status === "done" && existing.status !== "done";
 
-    // Auto-delete image file when task is completed to save server storage
+    // Auto-delete image file(s) when task is completed to save server storage
     let updatedImageUrl = data.imageUrl !== undefined ? data.imageUrl : existing.imageUrl;
     if (isMarkingDone && existing.imageUrl) {
       deleteUploadedImage(existing.imageUrl);
       updatedImageUrl = null;
+    } else if (data.imageUrl !== undefined && existing.imageUrl) {
+      const oldUrls = parseImageUrls(existing.imageUrl);
+      const newUrls = parseImageUrls(data.imageUrl);
+      const removedUrls = oldUrls.filter((url) => !newUrls.includes(url));
+      for (const url of removedUrls) {
+        deleteUploadedImage(url);
+      }
+      if (newUrls.length === 0) {
+        updatedImageUrl = null;
+      }
     }
 
     return prisma.task.update({

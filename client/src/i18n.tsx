@@ -90,6 +90,9 @@ export interface Translations {
   attachImage: string;
   removeImage: string;
   imageAttached: string;
+  addImage: string;
+  imagesAttached: string;
+  clickToEnlarge: string;
   moveUp: string;
   moveDown: string;
   pasteImageHint: string;
@@ -252,6 +255,9 @@ const translations: Record<Language, Translations> = {
     attachImage: "Attach Screenshot / Image",
     removeImage: "Remove Image",
     imageAttached: "Attached Image",
+    addImage: "Add another image",
+    imagesAttached: "attached images",
+    clickToEnlarge: "Click to preview full size",
     moveUp: "Move Up (Priority)",
     moveDown: "Move Down",
     pasteImageHint: "Or paste screenshot directly with Ctrl+V",
@@ -408,6 +414,9 @@ const translations: Record<Language, Translations> = {
     attachImage: "إرفاق صورة / سكرين شوت",
     removeImage: "إزالة الصورة",
     imageAttached: "صورة مرفقة",
+    addImage: "إضافة صورة أخرى",
+    imagesAttached: "صور مرفقة",
+    clickToEnlarge: "انقر لمعاينة الصورة بحجم كامل",
     moveUp: "تقديم لأعلى (أهمية)",
     moveDown: "تأخير لأسفل",
     pasteImageHint: "أو الصق السكرين شوت مباشرة بـ Ctrl+V",

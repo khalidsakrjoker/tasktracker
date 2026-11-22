@@ -9,6 +9,7 @@ import { ClientsCRMView } from "./components/ClientsCRMView";
 import { QuickTaskDrawer } from "./components/QuickTaskDrawer";
 import { EditTaskDrawer } from "./components/EditTaskDrawer";
 import { ImageLightboxModal } from "./components/ImageLightboxModal";
+import { parseImageUrls } from "./utils/imageCompressor";
 import { PinLockModal } from "./components/PinLockModal";
 import { NewProjectModal } from "./components/NewProjectModal";
 import { InstallAppModal } from "./components/InstallAppModal";
@@ -36,10 +37,37 @@ const MainAppContent: React.FC = () => {
   const [quickAddProjectId, setQuickAddProjectId] = useState<number | undefined>(undefined);
   const [quickAddClientId, setQuickAddClientId] = useState<number | undefined>(undefined);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number>(0);
   const [lightboxTitle, setLightboxTitle] = useState<string>("");
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+
+  const handleOpenLightbox = (
+    images: string[] | string,
+    indexOrTitle?: number | string,
+    maybeTitle?: string
+  ) => {
+    let imgList: string[] = [];
+    let idx = 0;
+    let titleStr = "";
+
+    if (Array.isArray(images)) {
+      imgList = images;
+      if (typeof indexOrTitle === "number") idx = indexOrTitle;
+      if (typeof maybeTitle === "string") titleStr = maybeTitle;
+      else if (typeof indexOrTitle === "string") titleStr = indexOrTitle;
+    } else if (typeof images === "string") {
+      imgList = parseImageUrls(images);
+      if (typeof indexOrTitle === "number") idx = indexOrTitle;
+      if (typeof maybeTitle === "string") titleStr = maybeTitle;
+      else if (typeof indexOrTitle === "string") titleStr = indexOrTitle;
+    }
+
+    setLightboxImages(imgList);
+    setLightboxIndex(idx);
+    setLightboxTitle(titleStr);
+  };
 
   // Helper to detect if running in standalone PWA window or already installed
   const checkIsStandaloneOrInstalled = (): boolean => {
@@ -402,10 +430,7 @@ const MainAppContent: React.FC = () => {
                   }}
                   onEditTask={(task) => setEditingTask(task)}
                   onReorderTask={handleReorderTask}
-                  onPreviewImage={(url, title) => {
-                    setLightboxImage(url);
-                    setLightboxTitle(title);
-                  }}
+                  onPreviewImage={handleOpenLightbox}
                 />
               )}
 
@@ -422,10 +447,7 @@ const MainAppContent: React.FC = () => {
                   }}
                   onDeleteTask={handleDeleteTask}
                   onEditTask={(task) => setEditingTask(task)}
-                  onPreviewImage={(url, title) => {
-                    setLightboxImage(url);
-                    setLightboxTitle(title);
-                  }}
+                  onPreviewImage={handleOpenLightbox}
                 />
               )}
 
@@ -471,16 +493,14 @@ const MainAppContent: React.FC = () => {
               setEditingTask(null);
             }}
             onCreateClient={handleCreateClient}
-            onPreviewImage={(url, title) => {
-              setLightboxImage(url);
-              if (title) setLightboxTitle(title);
-            }}
+            onPreviewImage={handleOpenLightbox}
           />
 
           <ImageLightboxModal
-            imageUrl={lightboxImage}
+            images={lightboxImages}
+            initialIndex={lightboxIndex}
             title={lightboxTitle}
-            onClose={() => setLightboxImage(null)}
+            onClose={() => setLightboxImages([])}
           />
 
           <NewProjectModal
