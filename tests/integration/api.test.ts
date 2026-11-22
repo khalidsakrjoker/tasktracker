@@ -155,4 +155,49 @@ describe("API Integration Endpoints Full Cycle", () => {
       .set("Authorization", `Bearer ${authToken}`);
     expect(deleteRes.status).toBe(200);
   });
+
+  it("POST /api/tasks/upload-image and auto-cleanup on task completion", async () => {
+    // 1. Upload a valid image
+    const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    const uploadRes = await request(app)
+      .post("/api/tasks/upload-image")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ image: samplePng });
+
+    expect(uploadRes.status).toBe(200);
+    expect(uploadRes.body.url).toMatch(/^\/uploads\/tasks\/.+\.png$/);
+    const imageUrl = uploadRes.body.url;
+
+    // 2. Create task with image attached
+    const projectsRes = await request(app)
+      .get("/api/projects")
+      .set("Authorization", `Bearer ${authToken}`);
+    const projectId = projectsRes.body[0].id;
+
+    const taskRes = await request(app)
+      .post("/api/tasks")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        title: "مهمة مع صورة مرفقة",
+        priority: "P2",
+        projectId,
+        imageUrl
+      });
+    expect(taskRes.status).toBe(201);
+    const taskId = taskRes.body.id;
+    expect(taskRes.body.imageUrl).toBe(imageUrl);
+
+    // 3. Complete task -> should auto-delete image and clear imageUrl
+    const doneRes = await request(app)
+      .put(`/api/tasks/${taskId}`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ status: "done" });
+    expect(doneRes.status).toBe(200);
+    expect(doneRes.body.imageUrl).toBeNull();
+
+    // 4. Clean up task
+    await request(app)
+      .delete(`/api/tasks/${taskId}`)
+      .set("Authorization", `Bearer ${authToken}`);
+  });
 });
