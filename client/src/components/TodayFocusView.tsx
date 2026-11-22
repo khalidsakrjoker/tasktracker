@@ -38,13 +38,12 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
     return (
       <div
         key={task.id}
-        className={`p-4 rounded-xl bg-theme-card border border-theme-border hover:border-blue-500/40 transition-all shadow-sm group ${
-          task.priority === "P1"
-            ? "glow-card-p1"
-            : task.priority === "P2"
+        className={`p-4 rounded-xl bg-theme-card border border-theme-border hover:border-blue-500/40 transition-all shadow-sm group ${task.priority === "P1"
+          ? "glow-card-p1"
+          : task.priority === "P2"
             ? "glow-card-p2"
             : "glow-card-p3"
-        }`}
+          }`}
       >
         {/* Header: Project Badge + Type */}
         <div className="flex items-center justify-between gap-2 mb-2">
@@ -124,9 +123,8 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
                 onClick={() => onReorderTask(task.id, "up", list)}
                 disabled={index === 0}
                 title={t("moveUp") || "تحريك لأعلى"}
-                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${
-                  index === 0 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
-                }`}
+                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${index === 0 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
+                  }`}
               >
                 <i className="fa-solid fa-chevron-up text-[10px]"></i>
               </button>
@@ -136,9 +134,8 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
                 onClick={() => onReorderTask(task.id, "down", list)}
                 disabled={index === list.length - 1}
                 title={t("moveDown") || "تحريك لأسفل"}
-                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${
-                  index === list.length - 1 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
-                }`}
+                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${index === list.length - 1 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
+                  }`}
               >
                 <i className="fa-solid fa-chevron-down text-[10px]"></i>
               </button>
@@ -174,11 +171,10 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
               type="button"
               onClick={() => onUpdateTaskStatus(task.id, task.status === "in_progress" ? "today" : "in_progress")}
               title={task.status === "in_progress" ? t("pauseBtn") : t("startBtn")}
-              className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all flex items-center gap-1 ${
-                task.status === "in_progress"
-                  ? "bg-amber-500/20 text-amber-600 border-amber-500/40 animate-pulse font-bold"
-                  : "bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary border-theme-border"
-              }`}
+              className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all flex items-center gap-1 ${task.status === "in_progress"
+                ? "bg-amber-500/20 text-amber-600 border-amber-500/40 animate-pulse font-bold"
+                : "bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary border-theme-border"
+                }`}
             >
               <i className={`fa-solid ${task.status === "in_progress" ? "fa-pause" : "fa-play"}`}></i>
               <span>{task.status === "in_progress" ? t("inProgressBadge") : t("startBtn")}</span>
