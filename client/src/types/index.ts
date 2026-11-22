@@ -64,9 +64,11 @@ export interface TodayFocusData {
   p1Urgent: Task[];
   p2Features: Task[];
   p3Tweaks: Task[];
+  backlogTasks?: Task[];
   stats: {
     urgentCount: number;
     todayCount: number;
     completedTodayCount: number;
+    backlogCount?: number;
   };
 }

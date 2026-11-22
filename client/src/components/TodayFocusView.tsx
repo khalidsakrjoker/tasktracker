@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Task, TodayFocusData } from "../types";
 import { useI18n } from "../i18n";
+import { BacklogDrawer } from "./BacklogDrawer";
 
 interface TodayFocusViewProps {
   focusData: TodayFocusData;
@@ -22,6 +23,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
   onPreviewImage
 }) => {
   const { t, lang } = useI18n();
+  const [isBacklogOpen, setIsBacklogOpen] = useState(false);
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -147,8 +149,18 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
             </span>
           </div>
 
-          {/* Action Buttons: Edit, Start/Pause, Done, Delete */}
+          {/* Action Buttons: Backlog, Edit, Start/Pause, Done, Delete */}
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onUpdateTaskStatus(task.id, "backlog")}
+              title={t("moveToBacklog")}
+              className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-amber-500/20 text-theme-textMuted hover:text-amber-500 border border-theme-border hover:border-amber-500/30 transition-all flex items-center justify-center gap-1"
+            >
+              <i className="fa-solid fa-inbox text-[11px]"></i>
+              <span className="hidden xl:inline text-[10px]">{t("moveToBacklog")}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => onEditTask(task)}
@@ -215,6 +227,22 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
             {t("focusSubtitle")}
           </p>
         </div>
+
+        {/* Backlog Quick Drawer Button */}
+        <button
+          type="button"
+          onClick={() => setIsBacklogOpen(true)}
+          className="px-3.5 py-2 rounded-xl bg-theme-card hover:bg-theme-elevated border border-theme-border hover:border-amber-500/40 text-xs font-semibold text-theme-textSecondary hover:text-amber-500 transition-all flex items-center gap-2.5 shadow-xs cursor-pointer group"
+          title={t("backlogDrawerTitle")}
+        >
+          <div className="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+            <i className="fa-solid fa-inbox text-[11px]"></i>
+          </div>
+          <span>{t("backlogDrawerTitle")}</span>
+          <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500">
+            {focusData.backlogTasks?.length || 0}
+          </span>
+        </button>
       </div>
 
       {/* 3 Full-Width Columns Grid */}
@@ -315,6 +343,16 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
           </div>
         </div>
       </div>
+
+      <BacklogDrawer
+        isOpen={isBacklogOpen}
+        onClose={() => setIsBacklogOpen(false)}
+        tasks={focusData.backlogTasks || []}
+        onUpdateTaskStatus={onUpdateTaskStatus}
+        onEditTask={onEditTask}
+        onDeleteTask={onDeleteTask}
+        onPreviewImage={onPreviewImage}
+      />
     </div>
   );
 };

@@ -93,6 +93,11 @@ export interface Translations {
   moveUp: string;
   moveDown: string;
   pasteImageHint: string;
+  moveToBacklog: string;
+  moveToToday: string;
+  backlogDrawerTitle: string;
+  backlogDrawerSubtitle: string;
+  backlogEmpty: string;
   defaultProjectDesc: string;
 
   // Clients CRM
@@ -250,6 +255,11 @@ const translations: Record<Language, Translations> = {
     moveUp: "Move Up (Priority)",
     moveDown: "Move Down",
     pasteImageHint: "Or paste screenshot directly with Ctrl+V",
+    moveToBacklog: "To Backlog",
+    moveToToday: "To Today Focus",
+    backlogDrawerTitle: "Task Backlog",
+    backlogDrawerSubtitle: "Deferred tasks not scheduled for today. Bring them to focus anytime.",
+    backlogEmpty: "Backlog is currently empty.",
     defaultProjectDesc: "Active software project in TaskTracker Studio",
 
     clientsTitle: "Clients & Stakeholders Directory",
@@ -401,6 +411,11 @@ const translations: Record<Language, Translations> = {
     moveUp: "تقديم لأعلى (أهمية)",
     moveDown: "تأخير لأسفل",
     pasteImageHint: "أو الصق السكرين شوت مباشرة بـ Ctrl+V",
+    moveToBacklog: "للانتظار",
+    moveToToday: "نقل للتركيز اليومي",
+    backlogDrawerTitle: "صندوق الانتظار (Backlog)",
+    backlogDrawerSubtitle: "مهام مؤجلة لم يحن وقتها اليوم؛ اضغط 'نقل للتركيز اليومي' لإعادتها للوحة فوراً.",
+    backlogEmpty: "صندوق الانتظار فارغ حالياً، لا توجد مهام مؤجلة.",
     defaultProjectDesc: "مشروع نشط في نظام TaskTracker",
 
     clientsTitle: "دليل العملاء والمستفيدين",

@@ -50,7 +50,22 @@ export class TasksService {
   static async getTodayFocus() {
     const tasks = await prisma.task.findMany({
       where: {
-        status: { in: ["today", "in_progress", "backlog"] }
+        status: { in: ["today", "in_progress"] }
+      },
+      include: {
+        project: {
+          select: { id: true, name: true, code: true, color: true, icon: true }
+        },
+        client: {
+          select: { id: true, name: true, phone: true }
+        }
+      },
+      orderBy: [{ priority: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
+    });
+
+    const backlogTasks = await prisma.task.findMany({
+      where: {
+        status: "backlog"
       },
       include: {
         project: {
@@ -80,10 +95,12 @@ export class TasksService {
       p1Urgent,
       p2Features,
       p3Tweaks,
+      backlogTasks,
       stats: {
         urgentCount: p1Urgent.length,
         todayCount: tasks.length,
-        completedTodayCount: completedToday
+        completedTodayCount: completedToday,
+        backlogCount: backlogTasks.length
       }
     };
   }
