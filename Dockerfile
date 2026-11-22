@@ -13,7 +13,7 @@ RUN npm install --omit=dev && npx prisma generate
 COPY dist ./dist
 COPY client/dist ./client/dist
 
-RUN chown -R node:node /app
+RUN mkdir -p /app/uploads/tasks && chown -R node:node /app
 
 USER node
 
