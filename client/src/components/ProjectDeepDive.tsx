@@ -24,10 +24,19 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
   onEditTask,
   onPreviewImage
 }) => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [filterClientId, setFilterClientId] = useState<number | null>(null);
   const [filterPriority, setFilterPriority] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "bug": return `🐞 ${t("typeBug")}`;
+      case "feature": return `✨ ${t("typeFeature")}`;
+      case "tweak": return `⚡ ${t("typeTweak")}`;
+      default: return `📞 ${t("typeSupport")}`;
+    }
+  };
 
   const projectTasks = tasks.filter((t) => t.projectId === project.id);
 
@@ -175,7 +184,8 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                   {colTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="p-3 rounded-xl bg-theme-card border border-theme-border hover:border-blue-500/40 transition-all shadow-sm space-y-2 group"
+                      onClick={() => onEditTask && onEditTask(task)}
+                      className="p-3 rounded-xl bg-theme-card border border-theme-border hover:border-blue-500/40 transition-all shadow-sm space-y-2 group cursor-pointer"
                     >
                       <div className="flex items-center justify-between">
                         <span
@@ -193,7 +203,10 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {onEditTask && (
                             <button
-                              onClick={() => onEditTask(task)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditTask(task);
+                              }}
                               className="text-theme-textMuted hover:text-blue-500 text-xs p-1"
                               title={t("editTaskBtn") || "تعديل المهمة"}
                             >
@@ -201,7 +214,12 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                             </button>
                           )}
                           <button
-                            onClick={() => onDeleteTask(task.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(lang === "ar" ? "هل تريد بالتأكيد حذف هذه المهمة نهائياً؟" : "Are you sure you want to delete this task?")) {
+                                onDeleteTask(task.id);
+                              }
+                            }}
                             className="text-theme-textMuted hover:text-rose-500 text-xs p-1"
                             title={t("deleteTask")}
                           >
@@ -210,20 +228,28 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                         </div>
                       </div>
 
-                      <h4 className="text-xs font-semibold text-theme-text leading-snug">
+                      <h4 className="text-xs font-semibold text-theme-text leading-snug group-hover:text-blue-500 transition-colors">
                         {task.title}
                       </h4>
+
+                      {/* Details / Notes snippet */}
+                      {task.details && (
+                        <p className="text-[11px] text-theme-textSecondary/80 line-clamp-2 leading-relaxed">
+                          {task.details}
+                        </p>
+                      )}
 
                       {/* Image Thumbnail(s) */}
                       {onPreviewImage && (() => {
                         const images = parseImageUrls(task.imageUrl);
                         if (images.length === 1) {
                           return (
-                            <div className="flex items-center">
+                            <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
                               <button
                                 type="button"
                                 onClick={() => onPreviewImage(images, 0, task.title)}
                                 className="relative w-14 h-9 rounded-md overflow-hidden border border-theme-borderSubtle hover:border-blue-500 transition cursor-zoom-in bg-black/20"
+                                title={t("clickToEnlarge")}
                               >
                                 <img
                                   src={images[0]}
@@ -237,13 +263,14 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                         }
                         if (images.length > 1) {
                           return (
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                               {images.slice(0, 2).map((img, idx) => (
                                 <button
                                   key={idx}
                                   type="button"
                                   onClick={() => onPreviewImage(images, idx, task.title)}
                                   className="relative w-12 h-9 rounded-md overflow-hidden border border-theme-borderSubtle hover:border-blue-500 transition cursor-zoom-in bg-black/20"
+                                  title={t("clickToEnlarge")}
                                 >
                                   <img
                                     src={img}
@@ -257,6 +284,7 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                                 type="button"
                                 onClick={() => onPreviewImage(images, 0, task.title)}
                                 className="px-1.5 py-1 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[10px] font-mono font-bold flex items-center gap-1"
+                                title={t("clickToEnlarge")}
                               >
                                 <i className="fa-regular fa-images text-[9px]"></i>
                                 <span>{images.length}</span>
@@ -275,7 +303,7 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                       )}
 
                       {/* Status Transition Select */}
-                      <div className="pt-2 border-t border-theme-border flex items-center justify-between">
+                      <div className="pt-2 border-t border-theme-border flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={task.status}
                           onChange={(e) => onUpdateTaskStatus(task.id, e.target.value)}
@@ -314,42 +342,97 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-theme-borderSubtle">
-              {filteredTasks.map((tk) => (
-                <tr key={tk.id} className="hover:bg-theme-hover/50 transition-colors">
-                  <td className="py-3 px-4 font-medium text-theme-text">{tk.title}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      tk.priority === "P1" ? "bg-rose-500/20 text-rose-500" : tk.priority === "P2" ? "bg-amber-500/20 text-amber-600" : "bg-emerald-500/20 text-emerald-600"
-                    }`}>
-                      {tk.priority}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-theme-textSecondary">{tk.type}</td>
-                  <td className="py-3 px-4 text-theme-textSecondary">{tk.client?.name || "—"}</td>
-                  <td className="py-3 px-4">
-                    <select
-                      value={tk.status}
-                      onChange={(e) => onUpdateTaskStatus(tk.id, e.target.value)}
-                      className="bg-theme-input border border-theme-border rounded px-2 py-1 text-xs text-theme-text"
-                    >
-                      <option value="backlog">{t("colBacklog")}</option>
-                      <option value="today">{t("colToday")}</option>
-                      <option value="in_progress">{t("colInProgress")}</option>
-                      <option value="done">{t("colDone")}</option>
-                    </select>
-                  </td>
-                  <td className="py-3 px-4 font-mono text-theme-textMuted">{tk.estimatedMinutes || 30}{t("minAbbr")}</td>
-                  <td className="py-3 px-4 text-center">
-                    <button
-                      onClick={() => onDeleteTask(tk.id)}
-                      className="text-theme-textMuted hover:text-rose-500 transition-colors p-1"
-                      title={t("deleteTask")}
-                    >
-                      <i className="fa-solid fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredTasks.map((tk) => {
+                const images = parseImageUrls(tk.imageUrl);
+                return (
+                  <tr
+                    key={tk.id}
+                    onClick={() => onEditTask && onEditTask(tk)}
+                    className="hover:bg-blue-500/10 transition-colors cursor-pointer group"
+                    title={lang === "ar" ? "اضغط لعرض وتعديل تفاصيل المهمة وملاحظاتها وصورها" : "Click to view task details, notes, and images"}
+                  >
+                    <td className="py-3 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-theme-text group-hover:text-blue-500 transition-colors">
+                          {tk.title}
+                        </span>
+                        {(tk.details || images.length > 0) && (
+                          <div className="flex items-center gap-2 mt-1">
+                            {tk.details && (
+                              <span className="text-[11px] text-theme-textMuted line-clamp-1 flex items-center gap-1">
+                                <i className="fa-regular fa-note-sticky text-[10px] text-amber-500/80"></i>
+                                <span>{tk.details}</span>
+                              </span>
+                            )}
+                            {images.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onPreviewImage && onPreviewImage(images, 0, tk.title);
+                                }}
+                                className="px-1.5 py-0.5 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 text-[10px] font-mono font-bold flex items-center gap-1 border border-blue-500/30 transition shrink-0"
+                                title={t("clickToEnlarge")}
+                              >
+                                <i className="fa-regular fa-images text-[9px]"></i>
+                                <span>{images.length}</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        tk.priority === "P1" ? "bg-rose-500/20 text-rose-500" : tk.priority === "P2" ? "bg-amber-500/20 text-amber-600" : "bg-emerald-500/20 text-emerald-600"
+                      }`}>
+                        {tk.priority}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-theme-textSecondary">{getTypeLabel(tk.type)}</td>
+                    <td className="py-3 px-4 text-theme-textSecondary">{tk.client?.name || "—"}</td>
+                    <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                      <select
+                        value={tk.status}
+                        onChange={(e) => onUpdateTaskStatus(tk.id, e.target.value)}
+                        className="bg-theme-input border border-theme-border rounded px-2 py-1 text-xs text-theme-text focus:outline-none"
+                      >
+                        <option value="backlog">{t("colBacklog")}</option>
+                        <option value="today">{t("colToday")}</option>
+                        <option value="in_progress">{t("colInProgress")}</option>
+                        <option value="done">{t("colDone")}</option>
+                      </select>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-theme-textMuted">{tk.estimatedMinutes || 30}{t("minAbbr")}</td>
+                    <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {onEditTask && (
+                          <button
+                            type="button"
+                            onClick={() => onEditTask(tk)}
+                            className="w-7 h-7 rounded-lg bg-theme-elevated hover:bg-blue-500/15 text-theme-textMuted hover:text-blue-500 border border-theme-border flex items-center justify-center transition text-xs"
+                            title={t("editTaskBtn")}
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(lang === "ar" ? "هل تريد بالتأكيد حذف هذه المهمة نهائياً؟" : "Are you sure you want to delete this task?")) {
+                              onDeleteTask(tk.id);
+                            }
+                          }}
+                          className="w-7 h-7 rounded-lg bg-theme-elevated hover:bg-rose-500/20 text-theme-textMuted hover:text-rose-500 border border-theme-border flex items-center justify-center transition text-xs"
+                          title={t("deleteTask")}
+                        >
+                          <i className="fa-regular fa-trash-can"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

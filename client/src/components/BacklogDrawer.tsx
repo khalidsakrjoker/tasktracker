@@ -114,13 +114,21 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-sm font-semibold text-theme-text leading-snug">
+                  <h3
+                    onClick={() => onEditTask(task)}
+                    className="text-sm font-semibold text-theme-text leading-snug cursor-pointer hover:text-blue-500 transition-colors"
+                    title={lang === "ar" ? "انقر لعرض تفاصيل المهمة وملاحظاتها وصورها" : "Click to view task details, notes, and images"}
+                  >
                     {task.title}
                   </h3>
 
                   {/* Details */}
                   {task.details && (
-                    <p className="text-xs text-theme-textSecondary line-clamp-2 bg-theme-card p-2 rounded-lg border border-theme-borderSubtle">
+                    <p
+                      onClick={() => onEditTask(task)}
+                      className="text-xs text-theme-textSecondary line-clamp-2 bg-theme-card p-2 rounded-lg border border-theme-borderSubtle cursor-pointer hover:border-blue-500/40 transition-colors"
+                      title={lang === "ar" ? "انقر لعرض التفاصيل" : "Click to view details"}
+                    >
                       {task.details}
                     </p>
                   )}

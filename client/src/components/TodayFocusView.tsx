@@ -173,14 +173,22 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
           </div>
         </div>
 
-        {/* Task Title (High Contrast & Clear) */}
-        <h3 className="text-xs sm:text-[13px] font-bold text-theme-text leading-snug group-hover:text-blue-500 transition-colors">
+        {/* Task Title (High Contrast & Clear, Click to Open Details) */}
+        <h3
+          onClick={() => onEditTask(task)}
+          className="text-xs sm:text-[13px] font-bold text-theme-text leading-snug group-hover:text-blue-500 transition-colors cursor-pointer"
+          title={lang === "ar" ? "انقر لعرض تفاصيل المهمة وملاحظاتها وصورها" : "Click to view task details, notes, and images"}
+        >
           {task.title}
         </h3>
 
-        {/* Details / Notes (Clean typography without bulky inner box) */}
+        {/* Details / Notes (Click to Open Details) */}
         {task.details && (
-          <p className="text-[11px] text-theme-textSecondary/90 line-clamp-2 leading-relaxed">
+          <p
+            onClick={() => onEditTask(task)}
+            className="text-[11px] text-theme-textSecondary/90 line-clamp-2 leading-relaxed cursor-pointer hover:text-theme-text transition-colors"
+            title={lang === "ar" ? "انقر لعرض التفاصيل بالكامل" : "Click to view full details"}
+          >
             {task.details}
           </p>
         )}
