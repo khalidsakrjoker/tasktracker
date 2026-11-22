@@ -114,94 +114,103 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
         )}
 
         {/* Footer: Quick Actions & Reordering */}
-        <div className="flex items-center justify-between pt-2 border-t border-theme-border">
-          {/* Reordering Controls (▲ / ▼) + Date */}
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center rounded-lg border border-theme-border bg-theme-elevated overflow-hidden shadow-xs">
-              <button
-                type="button"
-                onClick={() => onReorderTask(task.id, "up", list)}
-                disabled={index === 0}
-                title={t("moveUp") || "تحريك لأعلى"}
-                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${index === 0 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
+        <div className="pt-2 border-t border-theme-border space-y-2">
+          {/* Row 1: Reordering Controls (▲ / ▼) + Date + Move to Backlog */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center rounded-lg border border-theme-border bg-theme-elevated overflow-hidden shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => onReorderTask(task.id, "up", list)}
+                  disabled={index === 0}
+                  title={t("moveUp") || "تحريك لأعلى"}
+                  className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${
+                    index === 0 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
                   }`}
-              >
-                <i className="fa-solid fa-chevron-up text-[10px]"></i>
-              </button>
-              <div className="w-[1px] h-3 bg-theme-border"></div>
-              <button
-                type="button"
-                onClick={() => onReorderTask(task.id, "down", list)}
-                disabled={index === list.length - 1}
-                title={t("moveDown") || "تحريك لأسفل"}
-                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${index === list.length - 1 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
+                >
+                  <i className="fa-solid fa-chevron-up text-[10px]"></i>
+                </button>
+                <div className="w-[1px] h-3 bg-theme-border"></div>
+                <button
+                  type="button"
+                  onClick={() => onReorderTask(task.id, "down", list)}
+                  disabled={index === list.length - 1}
+                  title={t("moveDown") || "تحريك لأسفل"}
+                  className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${
+                    index === list.length - 1 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
                   }`}
-              >
-                <i className="fa-solid fa-chevron-down text-[10px]"></i>
-              </button>
+                >
+                  <i className="fa-solid fa-chevron-down text-[10px]"></i>
+                </button>
+              </div>
+
+              <span className="text-[10px] text-theme-textMuted font-mono">
+                {new Date(task.createdAt).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US")}
+              </span>
             </div>
 
-            <span className="text-[10px] text-theme-textMuted">
-              {new Date(task.createdAt).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US")}
-            </span>
-          </div>
-
-          {/* Action Buttons: Backlog, Edit, Start/Pause, Done, Delete */}
-          <div className="flex items-center gap-1">
+            {/* Clear, Prominent Move to Backlog Button */}
             <button
               type="button"
               onClick={() => onUpdateTaskStatus(task.id, "backlog")}
               title={t("moveToBacklog")}
-              className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-amber-500/20 text-theme-textMuted hover:text-amber-500 border border-theme-border hover:border-amber-500/30 transition-all flex items-center justify-center gap-1"
+              className="text-xs px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-500 border border-amber-500/40 hover:border-amber-500/60 font-semibold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <i className="fa-solid fa-inbox text-[11px]"></i>
-              <span className="hidden xl:inline text-[10px]">{t("moveToBacklog")}</span>
+              <span className="text-[11px] font-bold">{t("moveToBacklog")}</span>
             </button>
+          </div>
 
+          {/* Row 2: Edit Task + Status Actions (Start/Pause, Done, Delete) */}
+          <div className="flex items-center justify-between gap-1 pt-0.5">
             <button
               type="button"
               onClick={() => onEditTask(task)}
               title={t("editTaskBtn") || "تعديل المهمة"}
-              className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-blue-500/20 text-theme-textMuted hover:text-blue-500 border border-theme-border hover:border-blue-500/30 transition-all flex items-center justify-center"
+              className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-blue-500/20 text-theme-textSecondary hover:text-blue-500 border border-theme-border hover:border-blue-500/30 transition-all flex items-center gap-1"
             >
-              <i className="fa-solid fa-pen-to-square"></i>
+              <i className="fa-solid fa-pen-to-square text-[11px]"></i>
+              <span className="text-[10px]">{t("editTaskBtn")}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => onUpdateTaskStatus(task.id, task.status === "in_progress" ? "today" : "in_progress")}
-              title={task.status === "in_progress" ? t("pauseBtn") : t("startBtn")}
-              className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all flex items-center gap-1 ${task.status === "in_progress"
-                ? "bg-amber-500/20 text-amber-600 border-amber-500/40 animate-pulse font-bold"
-                : "bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary border-theme-border"
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => onUpdateTaskStatus(task.id, task.status === "in_progress" ? "today" : "in_progress")}
+                title={task.status === "in_progress" ? t("pauseBtn") : t("startBtn")}
+                className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all flex items-center gap-1 ${
+                  task.status === "in_progress"
+                    ? "bg-amber-500/20 text-amber-600 border-amber-500/40 animate-pulse font-bold"
+                    : "bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary border-theme-border"
                 }`}
-            >
-              <i className={`fa-solid ${task.status === "in_progress" ? "fa-pause" : "fa-play"}`}></i>
-              <span>{task.status === "in_progress" ? t("inProgressBadge") : t("startBtn")}</span>
-            </button>
+              >
+                <i className={`fa-solid ${task.status === "in_progress" ? "fa-pause" : "fa-play"}`}></i>
+                <span>{task.status === "in_progress" ? t("inProgressBadge") : t("startBtn")}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => onUpdateTaskStatus(task.id, "done")}
-              title={t("doneBtn")}
-              className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-600 border border-emerald-500/40 font-bold transition-all flex items-center gap-1"
-            >
-              <i className="fa-solid fa-check"></i>
-              <span>{t("doneBtn")}</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => onUpdateTaskStatus(task.id, "done")}
+                title={t("doneBtn")}
+                className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-600 border border-emerald-500/40 font-bold transition-all flex items-center gap-1"
+              >
+                <i className="fa-solid fa-check"></i>
+                <span>{t("doneBtn")}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm(lang === "ar" ? "هل تريد بالتأكيد حذف هذه المهمة نهائياً؟" : "Are you sure you want to delete this task?")) {
-                  onDeleteTask(task.id);
-                }
-              }}
-              title={t("deleteTask")}
-              className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-rose-500/20 text-theme-textMuted hover:text-rose-500 border border-theme-border hover:border-rose-500/30 transition-all flex items-center justify-center"
-            >
-              <i className="fa-regular fa-trash-can"></i>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(lang === "ar" ? "هل تريد بالتأكيد حذف هذه المهمة نهائياً؟" : "Are you sure you want to delete this task?")) {
+                    onDeleteTask(task.id);
+                  }
+                }}
+                title={t("deleteTask")}
+                className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-rose-500/20 text-theme-textMuted hover:text-rose-500 border border-theme-border hover:border-rose-500/30 transition-all flex items-center justify-center"
+              >
+                <i className="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>

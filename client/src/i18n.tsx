@@ -411,7 +411,7 @@ const translations: Record<Language, Translations> = {
     moveUp: "تقديم لأعلى (أهمية)",
     moveDown: "تأخير لأسفل",
     pasteImageHint: "أو الصق السكرين شوت مباشرة بـ Ctrl+V",
-    moveToBacklog: "للانتظار",
+    moveToBacklog: "نقل للانتظار",
     moveToToday: "نقل للتركيز اليومي",
     backlogDrawerTitle: "صندوق الانتظار (Backlog)",
     backlogDrawerSubtitle: "مهام مؤجلة لم يحن وقتها اليوم؛ اضغط 'نقل للتركيز اليومي' لإعادتها للوحة فوراً.",
