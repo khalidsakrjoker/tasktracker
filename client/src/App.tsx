@@ -7,6 +7,8 @@ import { TodayFocusView } from "./components/TodayFocusView";
 import { ProjectDeepDive } from "./components/ProjectDeepDive";
 import { ClientsCRMView } from "./components/ClientsCRMView";
 import { QuickTaskDrawer } from "./components/QuickTaskDrawer";
+import { EditTaskDrawer } from "./components/EditTaskDrawer";
+import { ImageLightboxModal } from "./components/ImageLightboxModal";
 import { PinLockModal } from "./components/PinLockModal";
 import { NewProjectModal } from "./components/NewProjectModal";
 import { InstallAppModal } from "./components/InstallAppModal";
@@ -33,6 +35,9 @@ const MainAppContent: React.FC = () => {
   const [quickAddPriority, setQuickAddPriority] = useState<"P1" | "P2" | "P3">("P2");
   const [quickAddProjectId, setQuickAddProjectId] = useState<number | undefined>(undefined);
   const [quickAddClientId, setQuickAddClientId] = useState<number | undefined>(undefined);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxTitle, setLightboxTitle] = useState<string>("");
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
@@ -234,6 +239,61 @@ const MainAppContent: React.FC = () => {
     }
   };
 
+  const handleEditTaskSave = async (updatedData: any) => {
+    if (!editingTask) return;
+    try {
+      await fetch(`/api/tasks/${editingTask.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData)
+      });
+      setEditingTask(null);
+      loadData();
+    } catch (err) {
+      console.error("Edit task error:", err);
+    }
+  };
+
+  const handleReorderTask = async (taskId: number, direction: "up" | "down", list: Task[]) => {
+    const currentIndex = list.findIndex((t) => t.id === taskId);
+    if (currentIndex === -1) return;
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    // Swap items in memory
+    const newList = [...list];
+    const temp = newList[currentIndex];
+    newList[currentIndex] = newList[targetIndex];
+    newList[targetIndex] = temp;
+
+    // Assign sequential sortOrder values
+    const items = newList.map((item, idx) => ({
+      id: item.id,
+      sortOrder: idx
+    }));
+
+    // Optimistic UI state update
+    const priority = list[0]?.priority;
+    setFocusData((prev) => {
+      if (priority === "P1") return { ...prev, p1Urgent: newList };
+      if (priority === "P2") return { ...prev, p2Features: newList };
+      if (priority === "P3") return { ...prev, p3Tweaks: newList };
+      return prev;
+    });
+
+    try {
+      await fetch("/api/tasks/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items })
+      });
+      loadData();
+    } catch (err) {
+      console.error("Reorder tasks error:", err);
+      loadData();
+    }
+  };
+
   const handleCreateClient = async (clientData: any): Promise<Client | null> => {
     try {
       const res = await fetch("/api/clients", {
@@ -340,6 +400,12 @@ const MainAppContent: React.FC = () => {
                     if (prio) setQuickAddPriority(prio);
                     setIsQuickAddOpen(true);
                   }}
+                  onEditTask={(task) => setEditingTask(task)}
+                  onReorderTask={handleReorderTask}
+                  onPreviewImage={(url, title) => {
+                    setLightboxImage(url);
+                    setLightboxTitle(title);
+                  }}
                 />
               )}
 
@@ -355,6 +421,11 @@ const MainAppContent: React.FC = () => {
                     setIsQuickAddOpen(true);
                   }}
                   onDeleteTask={handleDeleteTask}
+                  onEditTask={(task) => setEditingTask(task)}
+                  onPreviewImage={(url, title) => {
+                    setLightboxImage(url);
+                    setLightboxTitle(title);
+                  }}
                 />
               )}
 
@@ -386,6 +457,30 @@ const MainAppContent: React.FC = () => {
             initialClientId={quickAddClientId}
             onSaveTask={handleSaveTask}
             onCreateClient={handleCreateClient}
+          />
+
+          <EditTaskDrawer
+            isOpen={!!editingTask}
+            onClose={() => setEditingTask(null)}
+            task={editingTask}
+            projects={projects}
+            clients={clients}
+            onUpdateTask={async (_id, data) => handleEditTaskSave(data)}
+            onDeleteTask={(id) => {
+              handleDeleteTask(id);
+              setEditingTask(null);
+            }}
+            onCreateClient={handleCreateClient}
+            onPreviewImage={(url, title) => {
+              setLightboxImage(url);
+              if (title) setLightboxTitle(title);
+            }}
+          />
+
+          <ImageLightboxModal
+            imageUrl={lightboxImage}
+            title={lightboxTitle}
+            onClose={() => setLightboxImage(null)}
           />
 
           <NewProjectModal

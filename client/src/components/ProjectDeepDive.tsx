@@ -9,6 +9,8 @@ interface ProjectDeepDiveProps {
   onUpdateTaskStatus: (taskId: number, status: string) => void;
   onOpenQuickAdd: (priority?: "P1" | "P2" | "P3", defaultProjectId?: number) => void;
   onDeleteTask: (taskId: number) => void;
+  onEditTask?: (task: Task) => void;
+  onPreviewImage?: (imageUrl: string, title: string) => void;
 }
 
 export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
@@ -17,7 +19,9 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
   clients,
   onUpdateTaskStatus,
   onOpenQuickAdd,
-  onDeleteTask
+  onDeleteTask,
+  onEditTask,
+  onPreviewImage
 }) => {
   const { t } = useI18n();
   const [filterClientId, setFilterClientId] = useState<number | null>(null);
@@ -186,6 +190,15 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                         </span>
 
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {onEditTask && (
+                            <button
+                              onClick={() => onEditTask(task)}
+                              className="text-theme-textMuted hover:text-blue-500 text-xs p-1"
+                              title={t("editTaskBtn") || "تعديل المهمة"}
+                            >
+                              <i className="fa-solid fa-pen-to-square"></i>
+                            </button>
+                          )}
                           <button
                             onClick={() => onDeleteTask(task.id)}
                             className="text-theme-textMuted hover:text-rose-500 text-xs p-1"
@@ -199,6 +212,18 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                       <h4 className="text-xs font-semibold text-theme-text leading-snug">
                         {task.title}
                       </h4>
+
+                      {task.imageUrl && onPreviewImage && (
+                        <div className="rounded-lg overflow-hidden border border-theme-borderSubtle">
+                          <img
+                            src={task.imageUrl}
+                            alt={task.title}
+                            onClick={() => onPreviewImage(task.imageUrl!, task.title)}
+                            className="w-full h-24 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
 
                       {task.client && (
                         <div className="text-[11px] text-theme-textMuted flex items-center gap-1">

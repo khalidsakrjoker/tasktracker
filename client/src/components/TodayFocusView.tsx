@@ -7,13 +7,19 @@ interface TodayFocusViewProps {
   onUpdateTaskStatus: (taskId: number, status: string) => void;
   onDeleteTask: (taskId: number) => void;
   onOpenQuickAdd: (priority?: "P1" | "P2" | "P3") => void;
+  onEditTask: (task: Task) => void;
+  onReorderTask: (taskId: number, direction: "up" | "down", list: Task[]) => void;
+  onPreviewImage: (imageUrl: string, title: string) => void;
 }
 
 export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
   focusData,
   onUpdateTaskStatus,
   onDeleteTask,
-  onOpenQuickAdd
+  onOpenQuickAdd,
+  onEditTask,
+  onReorderTask,
+  onPreviewImage
 }) => {
   const { t, lang } = useI18n();
 
@@ -26,7 +32,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
     }
   };
 
-  const renderTaskCard = (task: Task) => {
+  const renderTaskCard = (task: Task, index: number, list: Task[]) => {
     return (
       <div
         key={task.id}
@@ -70,6 +76,29 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
           </p>
         )}
 
+        {/* Image Attachment Thumbnail with click to open full preview */}
+        {task.imageUrl && (
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={() => onPreviewImage(task.imageUrl!, task.title)}
+              className="group/img relative block w-full overflow-hidden rounded-lg border border-theme-borderSubtle hover:border-blue-500/50 transition-all cursor-zoom-in bg-black/20"
+              title={lang === "ar" ? "اضغط لتكبير الصورة كاملة" : "Click to view full image"}
+            >
+              <img
+                src={task.imageUrl}
+                alt={task.title}
+                className="w-full max-h-32 object-cover rounded-lg group-hover/img:scale-[1.03] transition-transform duration-200"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5 backdrop-blur-[1px]">
+                <i className="fa-solid fa-magnifying-glass-plus"></i>
+                <span>{lang === "ar" ? "عرض الصورة كاملة" : "Enlarge Image"}</span>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* Client association if any */}
         {task.client && (
           <div className="flex items-center gap-2 text-xs text-theme-textSecondary mb-3 bg-theme-elevated px-2 py-1 rounded border border-theme-borderSubtle">
@@ -83,14 +112,54 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
           </div>
         )}
 
-        {/* Footer: Quick Actions */}
+        {/* Footer: Quick Actions & Reordering */}
         <div className="flex items-center justify-between pt-2 border-t border-theme-border">
-          <span className="text-[10px] text-theme-textMuted">
-            {new Date(task.createdAt).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US")}
-          </span>
-
+          {/* Reordering Controls (▲ / ▼) + Date */}
           <div className="flex items-center gap-1.5">
+            <div className="flex items-center rounded-lg border border-theme-border bg-theme-elevated overflow-hidden shadow-xs">
+              <button
+                type="button"
+                onClick={() => onReorderTask(task.id, "up", list)}
+                disabled={index === 0}
+                title={t("moveUp") || "تحريك لأعلى"}
+                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${
+                  index === 0 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
+                }`}
+              >
+                <i className="fa-solid fa-chevron-up text-[10px]"></i>
+              </button>
+              <div className="w-[1px] h-3 bg-theme-border"></div>
+              <button
+                type="button"
+                onClick={() => onReorderTask(task.id, "down", list)}
+                disabled={index === list.length - 1}
+                title={t("moveDown") || "تحريك لأسفل"}
+                className={`px-1.5 py-1 text-xs hover:bg-theme-hover transition-colors ${
+                  index === list.length - 1 ? "opacity-25 cursor-not-allowed" : "text-theme-textSecondary hover:text-blue-500"
+                }`}
+              >
+                <i className="fa-solid fa-chevron-down text-[10px]"></i>
+              </button>
+            </div>
+
+            <span className="text-[10px] text-theme-textMuted">
+              {new Date(task.createdAt).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US")}
+            </span>
+          </div>
+
+          {/* Action Buttons: Edit, Start/Pause, Done, Delete */}
+          <div className="flex items-center gap-1">
             <button
+              type="button"
+              onClick={() => onEditTask(task)}
+              title={t("editTaskBtn") || "تعديل المهمة"}
+              className="text-xs px-2 py-1 rounded-lg bg-theme-elevated hover:bg-blue-500/20 text-theme-textMuted hover:text-blue-500 border border-theme-border hover:border-blue-500/30 transition-all flex items-center justify-center"
+            >
+              <i className="fa-solid fa-pen-to-square"></i>
+            </button>
+
+            <button
+              type="button"
               onClick={() => onUpdateTaskStatus(task.id, task.status === "in_progress" ? "today" : "in_progress")}
               title={task.status === "in_progress" ? t("pauseBtn") : t("startBtn")}
               className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all flex items-center gap-1 ${
@@ -104,6 +173,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
             </button>
 
             <button
+              type="button"
               onClick={() => onUpdateTaskStatus(task.id, "done")}
               title={t("doneBtn")}
               className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-600 border border-emerald-500/40 font-bold transition-all flex items-center gap-1"
@@ -113,6 +183,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 if (window.confirm(lang === "ar" ? "هل تريد بالتأكيد حذف هذه المهمة نهائياً؟" : "Are you sure you want to delete this task?")) {
                   onDeleteTask(task.id);
@@ -167,7 +238,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
                 <p className="text-xs">{t("p1EmergencyEmpty")}</p>
               </div>
             ) : (
-              focusData.p1Urgent.map(renderTaskCard)
+              focusData.p1Urgent.map((task, idx) => renderTaskCard(task, idx, focusData.p1Urgent))
             )}
 
             <button
@@ -199,7 +270,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
                 <p className="text-xs">{t("p2FeaturesEmpty")}</p>
               </div>
             ) : (
-              focusData.p2Features.map(renderTaskCard)
+              focusData.p2Features.map((task, idx) => renderTaskCard(task, idx, focusData.p2Features))
             )}
 
             <button
@@ -231,7 +302,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
                 <p className="text-xs">{t("p3TweaksEmpty")}</p>
               </div>
             ) : (
-              focusData.p3Tweaks.map(renderTaskCard)
+              focusData.p3Tweaks.map((task, idx) => renderTaskCard(task, idx, focusData.p3Tweaks))
             )}
 
             <button

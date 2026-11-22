@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Project, Client } from "../types";
 import { useI18n } from "../i18n";
 import { SearchableClientSelect } from "./SearchableClientSelect";
 import { ScalableProjectSelect } from "./ScalableProjectSelect";
+import { compressAndSanitizeImage } from "../utils/imageCompressor";
 
 interface QuickTaskDrawerProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface QuickTaskDrawerProps {
   onSaveTask: (data: {
     title: string;
     details?: string;
+    imageUrl?: string;
     type: "bug" | "feature" | "tweak" | "support";
     priority: "P1" | "P2" | "P3";
     status: "backlog" | "today" | "in_progress" | "done";
@@ -45,6 +47,59 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
   const [projectId, setProjectId] = useState<number>(projects[0]?.id || 1);
   const [clientId, setClientId] = useState<number | undefined>(undefined);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Support Ctrl+V paste of screenshots directly in the drawer
+  useEffect(() => {
+    if (!isOpen) return;
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) {
+            uploadAndAttachImage(file);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [isOpen]);
+
+  const uploadAndAttachImage = async (file: File | Blob) => {
+    setIsUploading(true);
+    try {
+      const base64Data = await compressAndSanitizeImage(file, 1280, 0.75);
+      const res = await fetch("/api/tasks/upload-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64Data })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setImageUrl(data.url);
+      }
+    } catch (err) {
+      console.error("Image upload error:", err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadAndAttachImage(file);
+    }
+  };
 
   useEffect(() => {
     if (initialPriority) setPriority(initialPriority);
@@ -67,6 +122,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
     onSaveTask({
       title: title.trim(),
       details: details.trim() || undefined,
+      imageUrl: imageUrl || undefined,
       type,
       priority,
       status,
@@ -77,6 +133,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
 
     setTitle("");
     setDetails("");
+    setImageUrl(null);
     onClose();
   };
 
@@ -246,6 +303,56 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
                 rows={3}
                 className="w-full bg-theme-input border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text placeholder-theme-textMuted focus:outline-none focus:border-blue-500 font-mono"
               />
+            </div>
+
+            {/* Image Attachment Section */}
+            <div className="p-3 rounded-2xl bg-theme-elevated/70 border border-theme-border space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-theme-text flex items-center gap-1.5">
+                  <i className="fa-regular fa-image text-blue-500"></i>
+                  <span>{t("attachImage")}</span>
+                </span>
+                <span className="text-[10px] text-theme-textMuted">{t("pasteImageHint")}</span>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              {imageUrl ? (
+                <div className="flex items-center justify-between p-2 rounded-xl bg-theme-card border border-theme-border">
+                  <div className="flex items-center gap-2.5">
+                    <img
+                      src={imageUrl}
+                      alt="Thumbnail"
+                      className="w-10 h-10 object-cover rounded-lg border border-theme-border"
+                    />
+                    <span className="text-xs font-semibold text-blue-500">{t("imageAttached")}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl(null)}
+                    title={t("removeImage")}
+                    className="p-1.5 rounded-lg bg-theme-hover hover:bg-rose-500/20 text-theme-textMuted hover:text-rose-500 transition text-xs"
+                  >
+                    <i className="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-2 px-3 rounded-xl border border-dashed border-theme-border hover:border-blue-500 bg-theme-card/60 hover:bg-theme-card text-xs text-theme-textSecondary hover:text-blue-500 flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <i className={`fa-solid ${isUploading ? "fa-spinner fa-spin" : "fa-cloud-arrow-up"} text-sm text-blue-500`}></i>
+                  <span>{isUploading ? "جاري ضغط ومعالجة الصورة..." : t("attachImage")}</span>
+                </button>
+              )}
             </div>
 
             <div className="pt-4 border-t border-theme-border flex items-center justify-end gap-3">

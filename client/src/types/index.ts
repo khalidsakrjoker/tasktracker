@@ -35,9 +35,11 @@ export interface Task {
   id: number;
   title: string;
   details?: string;
+  imageUrl?: string | null;
   type: "bug" | "feature" | "tweak" | "support";
   priority: "P1" | "P2" | "P3";
   status: "backlog" | "today" | "in_progress" | "done";
+  sortOrder?: number;
   estimatedMinutes?: number;
   dueDate?: string;
   completedAt?: string;

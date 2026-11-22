@@ -11,11 +11,14 @@ services:
       - .env
     volumes:
       - tasktracker_data:/app/prisma
+      - tasktracker_uploads:/app/uploads
     networks:
       - tasktracker_net
 
 volumes:
   tasktracker_data:
+    driver: local
+  tasktracker_uploads:
     driver: local
 
 networks:

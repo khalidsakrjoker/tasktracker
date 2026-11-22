@@ -3,6 +3,7 @@ import path from "path";
 import { config } from "../../config/index.js";
 import { logger } from "../../shared/logger.js";
 import { AuthService } from "../auth/auth.service.js";
+import { TasksService } from "../tasks/tasks.service.js";
 import { prisma } from "../../shared/db.js";
 
 export class TelegramService {
@@ -37,7 +38,7 @@ export class TelegramService {
     }
   }
 
-  static async sendMessage(text: string, chatId?: string | number): Promise<boolean> {
+  static async sendMessage(text: string, chatId?: string | number, replyMarkup?: any): Promise<boolean> {
     const targetChatId = chatId || config.TELEGRAM_CHAT_ID;
     if (!config.TELEGRAM_BOT_TOKEN || !targetChatId) {
       return false;
@@ -45,26 +46,29 @@ export class TelegramService {
 
     try {
       const url = `https://api.telegram.org/bot${config.TELEGRAM_BOT_TOKEN}/sendMessage`;
+      const bodyPayload: any = {
+        chat_id: targetChatId,
+        text,
+        parse_mode: "Markdown"
+      };
+      if (replyMarkup) {
+        bodyPayload.reply_markup = replyMarkup;
+      }
+
       let response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: targetChatId,
-          text,
-          parse_mode: "Markdown"
-        })
+        body: JSON.stringify(bodyPayload)
       });
 
       let data = (await response.json()) as { ok: boolean; description?: string };
       // Fallback if markdown parsing fails
       if (!data.ok) {
+        delete bodyPayload.parse_mode;
         response = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: targetChatId,
-            text
-          })
+          body: JSON.stringify(bodyPayload)
         });
         data = (await response.json()) as { ok: boolean; description?: string };
       }
@@ -152,10 +156,18 @@ export class TelegramService {
           ok: boolean;
           result: Array<{
             update_id: number;
+            callback_query?: {
+              id: string;
+              from: { id: number; first_name?: string; username?: string };
+              message?: { chat: { id: number | string }; message_id: number; text?: string };
+              data?: string;
+            };
             message?: {
               text?: string;
+              caption?: string;
               chat: { id: number | string };
               from?: { id: number; first_name?: string; username?: string };
+              voice?: { file_id: string; duration: number; file_size?: number };
             };
           }>;
         };
@@ -163,10 +175,26 @@ export class TelegramService {
         if (data.ok && Array.isArray(data.result)) {
           for (const update of data.result) {
             this.lastUpdateId = update.update_id;
-            const msgText = update.message?.text?.trim();
+
+            // 1. Handle inline button callbacks
+            if (update.callback_query) {
+              await this.handleCallbackQuery(update.callback_query);
+              continue;
+            }
+
             const chatId = update.message?.chat?.id;
             const fromUser = update.message?.from;
-            if (!msgText || !chatId) continue;
+            if (!chatId) continue;
+
+            // 2. Handle voice notes
+            if (update.message?.voice) {
+              await this.handleIncomingVoice(update.message.voice, chatId, fromUser, update.message.caption);
+              continue;
+            }
+
+            // 3. Handle text commands
+            const msgText = update.message?.text?.trim();
+            if (!msgText) continue;
 
             await this.handleIncomingCommand(msgText, chatId, fromUser);
           }
@@ -284,7 +312,8 @@ export class TelegramService {
         where: { status: { not: "done" } },
         orderBy: [
           { priority: "asc" },
-          { createdAt: "desc" }
+          { sortOrder: "asc" },
+          { createdAt: "asc" }
         ],
         take: 8,
         include: { project: true }
@@ -295,14 +324,22 @@ export class TelegramService {
         return;
       }
 
-      let list = `📋 *أبرز المهام المعلقة حالياً (${tasks.length}):*\n\n`;
+      await this.sendMessage(`📋 *أبرز المهام المعلقة حالياً (${tasks.length}):*`, chatId);
+
       for (const t of tasks) {
         const pIcon = t.priority === "P1" ? "🔴" : t.priority === "P2" ? "🟡" : "🟢";
-        list += `${pIcon} *[${t.priority}]* ${t.title}\n   📁 المشروع: _${t.project.name}_\n\n`;
+        const taskMsg = `${pIcon} *[${t.priority}]* ${t.title}\n📁 المشروع: _${t.project.name}_`;
+        const keyboard = {
+          inline_keyboard: [
+            [
+              { text: "▶️ بدء", callback_data: `start_${t.id}` },
+              { text: "✅ تم", callback_data: `done_${t.id}` },
+              { text: "🗑️ حذف", callback_data: `del_${t.id}` }
+            ]
+          ]
+        };
+        await this.sendMessage(taskMsg, chatId, keyboard);
       }
-      list += `🌐 للمزيد: ${config.APP_DOMAIN}`;
-
-      await this.sendMessage(list, chatId);
     } else if (rawCmd === "/add") {
       const cmdBody = text.replace(/^\/add(@\w+)?\s*/i, "").trim();
       if (!cmdBody) {
@@ -348,7 +385,17 @@ export class TelegramService {
         `📁 *المشروع:* ${project.name}\n\n` +
         `🌐 معروضة الآن في لوحة التحكم: ${config.APP_DOMAIN}`;
 
-      await this.sendMessage(reply, chatId);
+      const keyboard = {
+        inline_keyboard: [
+          [
+            { text: "▶️ بدء العمل", callback_data: `start_${newTask.id}` },
+            { text: "✅ تم الإنجاز", callback_data: `done_${newTask.id}` },
+            { text: "🗑️ حذف", callback_data: `del_${newTask.id}` }
+          ]
+        ]
+      };
+
+      await this.sendMessage(reply, chatId, keyboard);
     } else if (rawCmd === "/backup") {
       await this.sendMessage("⏳ جاري إنشاء النسخة الاحتياطية وإرسالها إليك...", chatId);
       const ok = await this.sendDatabaseBackup(chatId);
@@ -374,6 +421,149 @@ export class TelegramService {
         "❓ أمر غير معروف. اكتب `/help` لعرض قائمة الأوامر المتاحة.",
         chatId
       );
+    }
+  }
+
+  private static async handleIncomingVoice(
+    voice: { file_id: string; duration: number; file_size?: number },
+    chatId: number | string,
+    fromUser?: { id: number; first_name?: string; username?: string },
+    caption?: string
+  ): Promise<void> {
+    this.loadAuthorizedUsers();
+    const isGroup = String(chatId) === String(config.TELEGRAM_CHAT_ID);
+    const fromId = fromUser?.id;
+    const isAuthorized = isGroup || (fromId ? this.authorizedUserIds.has(fromId) || this.authorizedUserIds.has(String(fromId)) : false);
+
+    if (!isAuthorized) {
+      await this.sendMessage("⛔ وصول غير مصرح به لتسجيل المهام الصوتية.", chatId);
+      return;
+    }
+
+    const project = await prisma.project.findFirst({
+      where: { status: "active" },
+      orderBy: { createdAt: "asc" }
+    });
+
+    if (!project) {
+      await this.sendMessage("⚠️ لا يوجد مشروع نشط لإضافة التسجيل الصوتي إليه.", chatId);
+      return;
+    }
+
+    const taskTitle = caption?.trim() || `🎙️ طلب صوتي مسجل (${voice.duration || 0}ث)`;
+    const taskDetails = `تسجيل صوتي وارد عبر تليجرام (المدة: ${voice.duration || 0} ثانية).\nتاريخ الاستلام: ${new Date().toLocaleString("ar-EG")}`;
+
+    const newTask = await prisma.task.create({
+      data: {
+        title: taskTitle,
+        details: taskDetails,
+        priority: "P1", // Audio requests default to emergency focus P1
+        projectId: project.id,
+        type: "support",
+        status: "today"
+      },
+      include: { project: true }
+    });
+
+    const reply = `🎙️ *تم استلام التسجيل الصوتي وإدراجه كمهمة طارئة (P1)!*\n\n` +
+      `📌 *العنوان:* ${newTask.title}\n` +
+      `⏱️ *المدة:* ${voice.duration} ثانية\n` +
+      `📁 *المشروع:* ${project.name}\n` +
+      `🕒 *الوقت:* ${new Date().toLocaleTimeString("ar-EG")}\n\n` +
+      `🌐 ظاهرة الآن في لوحة التركيز اليومي: ${config.APP_DOMAIN}`;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: "▶️ بدء العمل", callback_data: `start_${newTask.id}` },
+          { text: "✅ تم الإنجاز", callback_data: `done_${newTask.id}` },
+          { text: "🗑️ حذف", callback_data: `del_${newTask.id}` }
+        ]
+      ]
+    };
+
+    await this.sendMessage(reply, chatId, keyboard);
+  }
+
+  private static async handleCallbackQuery(query: {
+    id: string;
+    from: { id: number; first_name?: string; username?: string };
+    message?: { chat: { id: number | string }; message_id: number; text?: string };
+    data?: string;
+  }): Promise<void> {
+    const fromId = query.from.id;
+    const chatId = query.message?.chat?.id;
+    const isGroup = String(chatId) === String(config.TELEGRAM_CHAT_ID);
+    this.loadAuthorizedUsers();
+    const isAuthorized = isGroup || this.authorizedUserIds.has(fromId) || this.authorizedUserIds.has(String(fromId));
+
+    const answerUrl = `https://api.telegram.org/bot${config.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`;
+    const sendAnswer = async (text: string) => {
+      try {
+        await fetch(answerUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: query.id, text })
+        });
+      } catch {}
+    };
+
+    if (!isAuthorized) {
+      await sendAnswer("⛔ غير مصرح لك بتنفيذ هذا الإجراء.");
+      return;
+    }
+
+    const data = query.data || "";
+    const [action, taskIdStr] = data.split("_");
+    const taskId = parseInt(taskIdStr, 10);
+
+    if (isNaN(taskId)) {
+      await sendAnswer("❌ معرف مهمة غير صالح.");
+      return;
+    }
+
+    try {
+      const task = await prisma.task.findUnique({
+        where: { id: taskId },
+        include: { project: true }
+      });
+
+      if (!task) {
+        await sendAnswer("⚠️ المهمة غير موجودة أو تم حذفها مسبقاً.");
+        return;
+      }
+
+      if (action === "done") {
+        await TasksService.updateTask(taskId, { status: "done" });
+        await sendAnswer("✅ تم إنجاز المهمة!");
+        if (chatId) {
+          await this.sendMessage(
+            `🎉 *تم إنجاز المهمة بنجاح:*\n"${task.title}"\n📁 المشروع: ${task.project.name}\n🧹 تم تنظيف أي مرفقات مرتبطة تلقائياً من السيرفر.`,
+            chatId
+          );
+        }
+      } else if (action === "start") {
+        await TasksService.updateTask(taskId, { status: "in_progress" });
+        await sendAnswer("▶️ بدأت العمل على المهمة!");
+        if (chatId) {
+          await this.sendMessage(
+            `⚡ *بدأ العمل على المهمة:* "${task.title}"\n📁 المشروع: ${task.project.name}`,
+            chatId
+          );
+        }
+      } else if (action === "del") {
+        await TasksService.deleteTask(taskId);
+        await sendAnswer("🗑️ تم حذف المهمة!");
+        if (chatId) {
+          await this.sendMessage(
+            `🗑️ *تم حذف المهمة نهائياً:* "${task.title}"`,
+            chatId
+          );
+        }
+      }
+    } catch (err) {
+      logger.error({ err }, "Error handling callback query in Telegram bot");
+      await sendAnswer("❌ حدث خطأ أثناء تنفيذ الإجراء.");
     }
   }
 }

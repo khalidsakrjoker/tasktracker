@@ -38,9 +38,11 @@ model Task {
   id               Int       @id @default(autoincrement())
   title            String
   details          String?
+  imageUrl         String?
   type             String    @default("feature")
   priority         String    @default("P2")
   status           String    @default("backlog")
+  sortOrder        Int       @default(0)
   estimatedMinutes Int?      @default(30)
   dueDate          DateTime?
   completedAt      DateTime?

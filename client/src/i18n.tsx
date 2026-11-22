@@ -85,6 +85,14 @@ export interface Translations {
   thTime: string;
   thActions: string;
   deleteTask: string;
+  editTaskBtn: string;
+  editTaskTitle: string;
+  attachImage: string;
+  removeImage: string;
+  imageAttached: string;
+  moveUp: string;
+  moveDown: string;
+  pasteImageHint: string;
   defaultProjectDesc: string;
 
   // Clients CRM
@@ -234,6 +242,14 @@ const translations: Record<Language, Translations> = {
     thTime: "Est. Time",
     thActions: "Actions",
     deleteTask: "Delete Task",
+    editTaskBtn: "Edit Task",
+    editTaskTitle: "Edit Task Details",
+    attachImage: "Attach Screenshot / Image",
+    removeImage: "Remove Image",
+    imageAttached: "Attached Image",
+    moveUp: "Move Up (Priority)",
+    moveDown: "Move Down",
+    pasteImageHint: "Or paste screenshot directly with Ctrl+V",
     defaultProjectDesc: "Active software project in TaskTracker Studio",
 
     clientsTitle: "Clients & Stakeholders Directory",
@@ -377,6 +393,14 @@ const translations: Record<Language, Translations> = {
     thTime: "الوقت",
     thActions: "إجراءات",
     deleteTask: "حذف المهمة",
+    editTaskBtn: "تعديل المهمة",
+    editTaskTitle: "تعديل تفاصيل المهمة",
+    attachImage: "إرفاق صورة / سكرين شوت",
+    removeImage: "إزالة الصورة",
+    imageAttached: "صورة مرفقة",
+    moveUp: "تقديم لأعلى (أهمية)",
+    moveDown: "تأخير لأسفل",
+    pasteImageHint: "أو الصق السكرين شوت مباشرة بـ Ctrl+V",
     defaultProjectDesc: "مشروع نشط في نظام TaskTracker",
 
     clientsTitle: "دليل العملاء والمستفيدين",
