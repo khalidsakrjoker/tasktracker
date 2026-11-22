@@ -65,6 +65,7 @@ export const EditTaskDrawer: React.FC<EditTaskDrawerProps> = ({
       if (!items) return;
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.startsWith("image/")) {
+          e.preventDefault();
           const file = items[i].getAsFile();
           if (file) {
             uploadAndAttachImage(file);
