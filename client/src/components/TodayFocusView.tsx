@@ -3,6 +3,7 @@ import { Task, TodayFocusData, Project, Client } from "../types";
 import { useI18n } from "../i18n";
 import { BacklogDrawer } from "./BacklogDrawer";
 import { TodayFilterBar } from "./TodayFilterBar";
+import { TaskAudioPlayer } from "./TaskAudioPlayer";
 import { parseImageUrls } from "../utils/imageCompressor";
 
 interface TodayFocusViewProps {
@@ -193,6 +194,13 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
           </p>
         )}
 
+        {/* Voice Note Audio Player */}
+        {task.audioUrl && (
+          <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+            <TaskAudioPlayer audioUrl={task.audioUrl} variant="compact" />
+          </div>
+        )}
+
         {/* Metadata Row: Client & Compact Image Thumbnails */}
         {(task.client || images.length > 0) && (
           <div className="flex items-center justify-between gap-2 pt-0.5">
@@ -339,7 +347,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
   };
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-4 max-w-full overflow-x-hidden">
       {/* Title & Philosophy Banner + Backlog Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1">
         <div>
@@ -389,7 +397,7 @@ export const TodayFocusView: React.FC<TodayFocusViewProps> = ({
       />
 
       {/* 3 Columns Grid (P1, P2, P3) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {/* Column 1: P1 Emergency */}
         <div className="flex flex-col rounded-2xl bg-theme-card/30 border border-theme-border/70 p-3 space-y-3 min-h-[400px]">
           {/* Sticky Column Header */}

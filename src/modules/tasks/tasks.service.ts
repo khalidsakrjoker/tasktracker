@@ -8,6 +8,7 @@ export interface CreateTaskInput {
   title: string;
   details?: string;
   imageUrl?: string | null;
+  audioUrl?: string | null;
   type?: "bug" | "feature" | "tweak" | "support";
   priority?: "P1" | "P2" | "P3";
   status?: "backlog" | "today" | "in_progress" | "done";
@@ -22,6 +23,7 @@ export interface UpdateTaskInput {
   title?: string;
   details?: string;
   imageUrl?: string | null;
+  audioUrl?: string | null;
   type?: string;
   priority?: string;
   status?: string;
@@ -64,6 +66,20 @@ export function deleteUploadedImage(imageUrl?: string | null): void {
     } catch (err) {
       logger.warn({ err, url }, "Failed to delete task image file");
     }
+  }
+}
+
+export function deleteUploadedAudio(audioUrl?: string | null): void {
+  if (!audioUrl || !audioUrl.startsWith("/uploads/audio/")) return;
+  try {
+    const filename = path.basename(audioUrl);
+    const filePath = path.resolve(process.cwd(), "uploads", "audio", filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      logger.info({ filePath }, "Deleted task audio file from disk to conserve storage");
+    }
+  } catch (err) {
+    logger.warn({ err, audioUrl }, "Failed to delete task audio file");
   }
 }
 
@@ -164,6 +180,7 @@ export class TasksService {
         title: data.title.trim(),
         details: data.details?.trim(),
         imageUrl: data.imageUrl,
+        audioUrl: data.audioUrl,
         type: data.type || "feature",
         priority: data.priority || "P2",
         status: data.status || "backlog",
@@ -205,11 +222,21 @@ export class TasksService {
       }
     }
 
+    // Auto-delete audio file when task is completed or audio is replaced
+    let updatedAudioUrl = data.audioUrl !== undefined ? data.audioUrl : existing.audioUrl;
+    if (isMarkingDone && existing.audioUrl) {
+      deleteUploadedAudio(existing.audioUrl);
+      updatedAudioUrl = null;
+    } else if (data.audioUrl !== undefined && existing.audioUrl && data.audioUrl !== existing.audioUrl) {
+      deleteUploadedAudio(existing.audioUrl);
+    }
+
     return prisma.task.update({
       where: { id },
       data: {
         ...data,
         imageUrl: updatedImageUrl,
+        audioUrl: updatedAudioUrl,
         completedAt: isMarkingDone ? new Date() : data.status && data.status !== "done" ? null : undefined
       },
       include: {
@@ -235,9 +262,12 @@ export class TasksService {
       throw new NotFoundError(`Task with id ${id} not found`);
     }
 
-    // Auto-delete image file if task is deleted
+    // Auto-delete image and audio files if task is deleted
     if (existing.imageUrl) {
       deleteUploadedImage(existing.imageUrl);
+    }
+    if (existing.audioUrl) {
+      deleteUploadedAudio(existing.audioUrl);
     }
 
     return prisma.task.delete({ where: { id } });

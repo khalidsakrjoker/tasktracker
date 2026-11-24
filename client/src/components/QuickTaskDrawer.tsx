@@ -3,6 +3,7 @@ import { Project, Client } from "../types";
 import { useI18n } from "../i18n";
 import { SearchableClientSelect } from "./SearchableClientSelect";
 import { ScalableProjectSelect } from "./ScalableProjectSelect";
+import { VoiceRecorderInput } from "./VoiceRecorderInput";
 import { compressAndSanitizeImage } from "../utils/imageCompressor";
 
 interface QuickTaskDrawerProps {
@@ -17,6 +18,7 @@ interface QuickTaskDrawerProps {
     title: string;
     details?: string;
     imageUrl?: string;
+    audioUrl?: string;
     type: "bug" | "feature" | "tweak" | "support";
     priority: "P1" | "P2" | "P3";
     status: "backlog" | "today" | "in_progress" | "done";
@@ -48,6 +50,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
   const [projectId, setProjectId] = useState<number>(projects[0]?.id || 1);
   const [clientId, setClientId] = useState<number | undefined>(undefined);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
 
@@ -142,6 +145,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
       title: title.trim(),
       details: details.trim() || undefined,
       imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : undefined,
+      audioUrl: audioUrl || undefined,
       type,
       priority,
       status,
@@ -153,6 +157,7 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
     setTitle("");
     setDetails("");
     setImageUrls([]);
+    setAudioUrl(null);
     onClose();
   };
 
@@ -409,6 +414,12 @@ export const QuickTaskDrawer: React.FC<QuickTaskDrawerProps> = ({
                 </span>
               </button>
             </div>
+
+            {/* Voice Recording / Audio Upload Section */}
+            <VoiceRecorderInput
+              audioUrl={audioUrl}
+              onAudioChange={setAudioUrl}
+            />
 
             <div className="pt-4 border-t border-theme-border flex items-center justify-end gap-3">
               <button

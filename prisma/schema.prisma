@@ -39,6 +39,7 @@ model Task {
   title            String
   details          String?
   imageUrl         String?
+  audioUrl         String?
   type             String    @default("feature")
   priority         String    @default("P2")
   status           String    @default("backlog")

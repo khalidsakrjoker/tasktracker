@@ -14,6 +14,7 @@ interface TopBarProps {
   isBackingUp: boolean;
   onOpenInstallModal: () => void;
   isAppInstalled: boolean;
+  onToggleMobileSidebar?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -27,15 +28,26 @@ export const TopBar: React.FC<TopBarProps> = ({
   onTriggerBackup,
   isBackingUp,
   onOpenInstallModal,
-  isAppInstalled
+  isAppInstalled,
+  onToggleMobileSidebar
 }) => {
   const { lang, setLang, t } = useI18n();
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="h-16 border-b border-theme-border bg-theme-card/85 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-6 flex items-center justify-between gap-4 transition-colors">
+    <header className="h-16 border-b border-theme-border bg-theme-card/85 backdrop-blur-md sticky top-0 z-30 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2.5 sm:gap-4 transition-colors">
+      {/* Mobile Hamburger Menu Toggle Button */}
+      <button
+        type="button"
+        onClick={onToggleMobileSidebar}
+        className="md:hidden w-9 h-9 rounded-xl bg-theme-elevated hover:bg-theme-hover border border-theme-border text-theme-text flex items-center justify-center transition shrink-0 active:scale-95"
+        title={lang === "ar" ? "فتح القائمة" : "Open sidebar menu"}
+      >
+        <i className="fa-solid fa-bars text-sm"></i>
+      </button>
+
       {/* Search Input */}
-      <div className="flex-1 max-w-xl relative">
+      <div className="flex-1 min-w-0 max-w-xl relative">
         <span className="absolute inset-y-0 start-3 flex items-center text-theme-textMuted pointer-events-none">
           <i className="fa-solid fa-magnifying-glass text-xs"></i>
         </span>
@@ -124,10 +136,11 @@ export const TopBar: React.FC<TopBarProps> = ({
         {/* Quick Add Button */}
         <button
           onClick={onOpenQuickAdd}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all shrink-0"
         >
-          <i className="fa-solid fa-plus"></i>
-          <span>{t("quickCaptureBtn")}</span>
+          <i className="fa-solid fa-plus text-xs"></i>
+          <span className="hidden sm:inline">{t("quickCaptureBtn")}</span>
+          <span className="sm:hidden">{lang === "ar" ? "مهمة" : "Task"}</span>
         </button>
 
         {/* Logout / Lock */}

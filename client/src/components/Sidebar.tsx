@@ -10,6 +10,8 @@ interface SidebarProps {
   onOpenNewProject: () => void;
   onOpenInstallModal?: () => void;
   isAppInstalled?: boolean;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -19,25 +21,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
   projects,
   onOpenNewProject,
   onOpenInstallModal,
-  isAppInstalled
+  isAppInstalled,
+  isMobileOpen,
+  onCloseMobile
 }) => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+
+  const handleSelectWorkspace = (view: "focus" | "project" | "clients", projectId?: number) => {
+    onSelectView(view, projectId);
+    onCloseMobile?.();
+  };
 
   return (
-    <aside className="w-64 border-e border-theme-border bg-theme-card flex flex-col justify-between h-[calc(100vh-4rem)] sticky top-16 select-none shrink-0 transition-colors">
+    <aside
+      className={`
+        border-e border-theme-border bg-theme-card flex flex-col justify-between select-none transition-all duration-300 z-50
+        md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:w-64 md:shrink-0 md:flex
+        ${
+          isMobileOpen
+            ? "fixed inset-y-0 start-0 w-72 max-w-[85vw] h-full shadow-2xl flex"
+            : "hidden md:flex"
+        }
+      `}
+    >
       <div className="p-4 space-y-6 overflow-y-auto">
         {/* Brand Header */}
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <i className="fa-solid fa-bolt-lightning text-sm"></i>
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+              <i className="fa-solid fa-bolt-lightning text-sm"></i>
+            </div>
+            <div>
+              <h1 className="text-sm font-bold tracking-tight text-theme-text flex items-center gap-1.5">
+                <span>{t("appTitle")}</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              </h1>
+              <p className="text-[11px] text-theme-textMuted">{t("appSubtitle")}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-sm font-bold tracking-tight text-theme-text flex items-center gap-1.5">
-              <span>{t("appTitle")}</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            </h1>
-            <p className="text-[11px] text-theme-textMuted">{t("appSubtitle")}</p>
-          </div>
+
+          {/* Mobile Close Button */}
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="md:hidden w-8 h-8 rounded-lg bg-theme-elevated hover:bg-theme-hover text-theme-textSecondary flex items-center justify-center transition"
+              title={lang === "ar" ? "إغلاق القائمة" : "Close menu"}
+            >
+              <i className="fa-solid fa-xmark text-sm"></i>
+            </button>
+          )}
         </div>
 
         {/* Main Navigation */}
@@ -47,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           <button
-            onClick={() => onSelectView("focus")}
+            onClick={() => handleSelectWorkspace("focus")}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeView === "focus"
                 ? "bg-blue-600/15 text-blue-600 border border-blue-500/30 font-bold"
@@ -64,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <button
-            onClick={() => onSelectView("clients")}
+            onClick={() => handleSelectWorkspace("clients")}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeView === "clients"
                 ? "bg-blue-600/15 text-blue-600 border border-blue-500/30 font-bold"
@@ -85,7 +117,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {t("activeProjects")}
             </span>
             <button
-              onClick={onOpenNewProject}
+              onClick={() => {
+                onOpenNewProject();
+                onCloseMobile?.();
+              }}
               title={t("addProject")}
               className="text-theme-textMuted hover:text-blue-600 transition-colors text-xs p-1"
             >
@@ -99,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               return (
                 <button
                   key={p.id}
-                  onClick={() => onSelectView("project", p.id)}
+                  onClick={() => handleSelectWorkspace("project", p.id)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     isSelected
                       ? "bg-theme-elevated text-theme-text border border-theme-border font-bold shadow-sm"

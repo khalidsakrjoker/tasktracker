@@ -116,9 +116,9 @@ export const TodayFilterBar: React.FC<TodayFilterBarProps> = ({
   return (
     <div className="bg-theme-card/80 border border-theme-border rounded-2xl p-3 sm:p-4 space-y-3 shadow-xs">
       {/* Top Filter Controls: Search + Searchable Project Select + Searchable Client Select */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
         {/* Realtime Search Input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <i className="fa-solid fa-magnifying-glass absolute start-3.5 top-1/2 -translate-y-1/2 text-xs text-theme-textMuted pointer-events-none"></i>
           <input
             type="text"
@@ -139,7 +139,7 @@ export const TodayFilterBar: React.FC<TodayFilterBarProps> = ({
         </div>
 
         {/* Searchable Project Combobox Dropdown */}
-        <div ref={projectRef} className="relative min-w-[200px]">
+        <div ref={projectRef} className="relative w-full sm:w-auto sm:min-w-[190px]">
           <button
             type="button"
             onClick={() => {
@@ -265,7 +265,7 @@ export const TodayFilterBar: React.FC<TodayFilterBarProps> = ({
         </div>
 
         {/* Searchable Client Combobox Dropdown */}
-        <div ref={clientRef} className="relative min-w-[200px]">
+        <div ref={clientRef} className="relative w-full sm:w-auto sm:min-w-[190px]">
           <button
             type="button"
             onClick={() => {
@@ -381,9 +381,9 @@ export const TodayFilterBar: React.FC<TodayFilterBarProps> = ({
       </div>
 
       {/* Row 2: Quick Project Chips for instant 1-click filtering + Active Filter Pills */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-theme-border/50">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1 border-t border-theme-border/50">
         {/* Quick Project Filter Chips */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full">
           <span className="text-[11px] text-theme-textMuted font-medium me-1 flex items-center gap-1">
             <i className="fa-solid fa-bolt-lightning text-amber-500 text-[10px]"></i>
             <span>{lang === "ar" ? "تصفية سريعة:" : "Quick Filter:"}</span>

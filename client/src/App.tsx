@@ -42,6 +42,7 @@ const MainAppContent: React.FC = () => {
   const [lightboxTitle, setLightboxTitle] = useState<string>("");
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleOpenLightbox = (
     images: string[] | string,
@@ -402,23 +403,42 @@ const MainAppContent: React.FC = () => {
             isBackingUp={isBackingUp}
             onOpenInstallModal={() => setIsInstallModalOpen(true)}
             isAppInstalled={isAppInstalled}
+            onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
           />
 
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden relative">
+            {/* Mobile Sidebar Backdrop Overlay */}
+            {isMobileSidebarOpen && (
+              <div
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden transition-opacity"
+                aria-hidden="true"
+              />
+            )}
+
             <Sidebar
               activeView={activeView}
               selectedProjectId={selectedProjectId}
               onSelectView={(view, projId) => {
                 setActiveView(view);
                 if (projId) setSelectedProjectId(projId);
+                setIsMobileSidebarOpen(false);
               }}
               projects={projects}
-              onOpenNewProject={() => setIsNewProjectModalOpen(true)}
-              onOpenInstallModal={() => setIsInstallModalOpen(true)}
+              onOpenNewProject={() => {
+                setIsNewProjectModalOpen(true);
+                setIsMobileSidebarOpen(false);
+              }}
+              onOpenInstallModal={() => {
+                setIsInstallModalOpen(true);
+                setIsMobileSidebarOpen(false);
+              }}
               isAppInstalled={isAppInstalled}
+              isMobileOpen={isMobileSidebarOpen}
+              onCloseMobile={() => setIsMobileSidebarOpen(false)}
             />
 
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto w-full min-w-0">
               {activeView === "focus" && (
                 <TodayFocusView
                   focusData={focusData}

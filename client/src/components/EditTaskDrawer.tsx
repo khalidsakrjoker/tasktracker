@@ -3,6 +3,7 @@ import { Project, Client, Task } from "../types";
 import { useI18n } from "../i18n";
 import { SearchableClientSelect } from "./SearchableClientSelect";
 import { ScalableProjectSelect } from "./ScalableProjectSelect";
+import { VoiceRecorderInput } from "./VoiceRecorderInput";
 import { compressAndSanitizeImage, parseImageUrls } from "../utils/imageCompressor";
 
 interface EditTaskDrawerProps {
@@ -38,6 +39,7 @@ export const EditTaskDrawer: React.FC<EditTaskDrawerProps> = ({
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
   const [projectId, setProjectId] = useState<number>(1);
   const [clientId, setClientId] = useState<number | undefined>(undefined);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -55,6 +57,7 @@ export const EditTaskDrawer: React.FC<EditTaskDrawerProps> = ({
       setEstimatedMinutes(task.estimatedMinutes || 30);
       setProjectId(task.projectId);
       setClientId(task.clientId || undefined);
+      setAudioUrl(task.audioUrl || null);
     }
   }, [task, isOpen]);
 
@@ -141,6 +144,7 @@ export const EditTaskDrawer: React.FC<EditTaskDrawerProps> = ({
         title: title.trim(),
         details: details.trim() || null,
         imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
+        audioUrl: audioUrl || null,
         type,
         priority,
         status,
@@ -403,6 +407,12 @@ export const EditTaskDrawer: React.FC<EditTaskDrawerProps> = ({
                 </span>
               </button>
             </div>
+
+            {/* Voice Recording / Audio Upload Section */}
+            <VoiceRecorderInput
+              audioUrl={audioUrl}
+              onAudioChange={setAudioUrl}
+            />
 
             {/* Actions: Save / Delete / Cancel */}
             <div className="pt-4 border-t border-theme-border flex items-center justify-between gap-3">

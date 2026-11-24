@@ -79,6 +79,52 @@ tasksRouter.post("/upload-image", async (req: Request, res: Response, next) => {
   }
 });
 
+tasksRouter.post("/upload-audio", async (req: Request, res: Response, next) => {
+  try {
+    const { audio } = req.body;
+    if (!audio || typeof audio !== "string") {
+      res.status(400).json({ error: "Missing audio data" });
+      return;
+    }
+
+    // Accepts webm, ogg, oga, mpeg, mp3, wav, m4a, mp4, aac with optional codec parameters
+    const matches = audio.match(/^data:audio\/([a-zA-Z0-9.\-_]+)(?:;[a-zA-Z0-9=\-_]+)*;base64,(.+)$/i);
+    if (!matches) {
+      res.status(400).json({ error: "Only WebM, OGG, MP3, WAV, and M4A audio formats are allowed" });
+      return;
+    }
+
+    let ext = matches[1].toLowerCase();
+    if (ext === "mpeg") ext = "mp3";
+    if (ext === "x-m4a" || ext === "mp4") ext = "m4a";
+    if (ext === "opus") ext = "ogg";
+    const allowed = ["webm", "ogg", "oga", "mp3", "wav", "m4a", "aac"];
+    if (!allowed.includes(ext)) {
+      ext = "webm"; // safe fallback
+    }
+    const buffer = Buffer.from(matches[2], "base64");
+
+    // Security check: limit size to 15MB
+    if (buffer.length > 15 * 1024 * 1024) {
+      res.status(400).json({ error: "Audio file exceeds 15MB limit" });
+      return;
+    }
+
+    const uploadDir = path.resolve(process.cwd(), "uploads", "audio");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filename = `audio_${Date.now()}_${crypto.randomBytes(6).toString("hex")}.${ext}`;
+    const filePath = path.join(uploadDir, filename);
+
+    fs.writeFileSync(filePath, buffer);
+    res.json({ url: `/uploads/audio/${filename}` });
+  } catch (err) {
+    next(err);
+  }
+});
+
 tasksRouter.put("/reorder", async (req: Request, res: Response, next) => {
   try {
     const { items } = req.body;

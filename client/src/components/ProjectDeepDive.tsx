@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Project, Task, Client } from "../types";
 import { useI18n } from "../i18n";
 import { parseImageUrls } from "../utils/imageCompressor";
+import { TaskAudioPlayer } from "./TaskAudioPlayer";
 
 interface ProjectDeepDiveProps {
   project: Project;
@@ -239,6 +240,13 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                         </p>
                       )}
 
+                      {/* Voice Note Audio Player */}
+                      {task.audioUrl && (
+                        <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                          <TaskAudioPlayer audioUrl={task.audioUrl} variant="compact" />
+                        </div>
+                      )}
+
                       {/* Image Thumbnail(s) */}
                       {onPreviewImage && (() => {
                         const images = parseImageUrls(task.imageUrl);
@@ -356,7 +364,7 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                         <span className="font-semibold text-theme-text group-hover:text-blue-500 transition-colors">
                           {tk.title}
                         </span>
-                        {(tk.details || images.length > 0) && (
+                        {(tk.details || images.length > 0 || tk.audioUrl) && (
                           <div className="flex items-center gap-2 mt-1">
                             {tk.details && (
                               <span className="text-[11px] text-theme-textMuted line-clamp-1 flex items-center gap-1">
@@ -377,6 +385,11 @@ export const ProjectDeepDive: React.FC<ProjectDeepDiveProps> = ({
                                 <i className="fa-regular fa-images text-[9px]"></i>
                                 <span>{images.length}</span>
                               </button>
+                            )}
+                            {tk.audioUrl && (
+                              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <TaskAudioPlayer audioUrl={tk.audioUrl} variant="compact" />
+                              </div>
                             )}
                           </div>
                         )}

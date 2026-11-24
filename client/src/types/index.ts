@@ -36,6 +36,7 @@ export interface Task {
   title: string;
   details?: string;
   imageUrl?: string | null;
+  audioUrl?: string | null;
   type: "bug" | "feature" | "tweak" | "support";
   priority: "P1" | "P2" | "P3";
   status: "backlog" | "today" | "in_progress" | "done";

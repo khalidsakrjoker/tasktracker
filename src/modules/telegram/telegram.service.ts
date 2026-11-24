@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { config } from "../../config/index.js";
 import { logger } from "../../shared/logger.js";
 import { AuthService } from "../auth/auth.service.js";
@@ -453,10 +454,13 @@ export class TelegramService {
     const taskTitle = caption?.trim() || `🎙️ طلب صوتي مسجل (${voice.duration || 0}ث)`;
     const taskDetails = `تسجيل صوتي وارد عبر تليجرام (المدة: ${voice.duration || 0} ثانية).\nتاريخ الاستلام: ${new Date().toLocaleString("ar-EG")}`;
 
+    const audioUrl = await this.downloadTelegramAudio(voice.file_id);
+
     const newTask = await prisma.task.create({
       data: {
         title: taskTitle,
         details: taskDetails,
+        audioUrl,
         priority: "P1", // Audio requests default to emergency focus P1
         projectId: project.id,
         type: "support",
@@ -483,6 +487,40 @@ export class TelegramService {
     };
 
     await this.sendMessage(reply, chatId, keyboard);
+  }
+
+  private static async downloadTelegramAudio(fileId: string): Promise<string | null> {
+    try {
+      const getFileUrl = `https://api.telegram.org/bot${config.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`;
+      const res = await fetch(getFileUrl);
+      if (!res.ok) return null;
+      const data = (await res.json()) as { ok: boolean; result?: { file_path?: string } };
+      if (!data.ok || !data.result?.file_path) return null;
+
+      const filePath = data.result.file_path;
+      const downloadUrl = `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${filePath}`;
+      const fileRes = await fetch(downloadUrl);
+      if (!fileRes.ok) return null;
+
+      const arrayBuffer = await fileRes.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const uploadDir = path.resolve(process.cwd(), "uploads", "audio");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const ext = path.extname(filePath) || ".oga";
+      const filename = `voice_${Date.now()}_${crypto.randomBytes(4).toString("hex")}${ext}`;
+      const localFilePath = path.join(uploadDir, filename);
+
+      fs.writeFileSync(localFilePath, buffer);
+      logger.info({ filename, size: buffer.length }, "Downloaded and saved Telegram voice note");
+      return `/uploads/audio/${filename}`;
+    } catch (err) {
+      logger.error({ err, fileId }, "Failed to download voice file from Telegram");
+      return null;
+    }
   }
 
   private static async handleCallbackQuery(query: {

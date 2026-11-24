@@ -2,6 +2,7 @@ import React from "react";
 import { Task } from "../types";
 import { useI18n } from "../i18n";
 import { parseImageUrls } from "../utils/imageCompressor";
+import { TaskAudioPlayer } from "./TaskAudioPlayer";
 
 interface BacklogDrawerProps {
   isOpen: boolean;
@@ -131,6 +132,13 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                     >
                       {task.details}
                     </p>
+                  )}
+
+                  {/* Voice Note Audio Player */}
+                  {task.audioUrl && (
+                    <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                      <TaskAudioPlayer audioUrl={task.audioUrl} variant="compact" />
+                    </div>
                   )}
 
                   {/* Image Thumbnail(s) */}
